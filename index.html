@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #FAF8F3;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #1A1714;
+    --muted: #7A746C;
+    --accent: #2E1A0E;
+    --amber: #C17E2A;
+    --amber-light: #FDF3E3;
+    --amber-dark: #7A4F0F;
+    --red: #B94040;
+    --red-light: #FDF0EF;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; }
+
+  .site-header { background: var(--accent); color: #FAF8F3; padding: 2rem 1.5rem 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+  .site-header h1 { font-family: 'DM Serif Display', serif; font-size: 32px; font-weight: 400; }
+  .site-header p { font-size: 12px; opacity: 0.55; margin-top: 3px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 1.25rem 1.25rem 0; }
+  .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.875rem 1rem; text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 500; font-family: 'DM Serif Display', serif; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .controls { padding: 1rem 1.25rem 0.5rem; display: flex; gap: 8px; }
+  .search-wrap { flex: 1; position: relative; }
+  .search-wrap input { width: 100%; padding: 9px 12px 9px 34px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--surface); color: var(--text); outline: none; }
+  .search-wrap input:focus { border-color: var(--amber); }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .add-btn { background: var(--amber); color: white; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+  .add-btn:hover { background: var(--amber-dark); }
+
+  .cart-tabs { display: flex; padding: 0 1.25rem; border-bottom: 0.5px solid var(--border); overflow-x: auto; scrollbar-width: none; margin-top: 0.75rem; }
+  .cart-tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; font-size: 13px; padding: 10px 14px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: color 0.15s; }
+  .tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .cart-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 100px; margin-left: 5px; font-weight: 400; }
+
+  .inventory { padding: 0 1.25rem; }
+  .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0.875rem 0 0.4rem; }
+  .section-label.cart-label { padding-left: 10px; border-radius: 0; }
+
+  .item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 11px 13px; margin-bottom: 7px; transition: border-color 0.15s; }
+  .item:hover { border-color: var(--border-strong); }
+  .item-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge-out { font-size: 10px; padding: 2px 7px; border-radius: 100px; background: var(--red-light); color: var(--red); font-weight: 500; }
+
+  .qty-ctrl { display: flex; align-items: center; gap: 7px; }
+  .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: 0.5px solid var(--border-strong); background: var(--bg); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: background 0.1s; font-family: inherit; }
+  .qty-btn:hover { background: var(--amber-light); border-color: var(--amber); }
+  .qty-num { font-size: 15px; font-weight: 500; min-width: 20px; text-align: center; }
+  .del-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; cursor: pointer; color: var(--muted); font-size: 18px; display: flex; align-items: center; justify-content: center; font-family: inherit; transition: color 0.1s; }
+  .del-btn:hover { color: var(--red); }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 14px; }
+
+  .cocktail-wrap { padding: 0.25rem 1.25rem 0; }
+  .cocktail-btn { width: 100%; background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 13px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, border-color 0.15s; }
+  .cocktail-btn:hover { background: var(--amber-light); border-color: var(--amber); }
+
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(20,14,8,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 1.5rem; width: 100%; max-width: 500px; max-height: 92vh; overflow-y: auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 1.25rem; }
+  .modal h2 { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; margin-bottom: 1.25rem; }
+  .field { margin-bottom: 0.875rem; }
+  .field label { display: block; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 10px 12px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 15px; background: var(--bg); color: var(--text); outline: none; appearance: none; }
+  .field input:focus, .field select:focus { border-color: var(--amber); background: white; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 1.5rem; }
+  .btn-cancel { flex: 1; padding: 12px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); background: transparent; font-family: inherit; font-size: 15px; cursor: pointer; color: var(--muted); }
+  .btn-save { flex: 2; padding: 12px; border: none; border-radius: var(--radius-sm); background: var(--accent); color: #FAF8F3; font-family: inherit; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-save:hover { background: #3D2416; }
+  .cocktail-result { font-size: 14px; color: var(--text); line-height: 1.75; white-space: pre-wrap; min-height: 80px; }
+  .dot-pulse { display: flex; gap: 4px; align-items: center; }
+  .dot-pulse span { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+  .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <h1>Home Bar</h1>
+    <p id="last-updated">Tap + to add a bottle</p>
+  </div>
+  <button class="add-btn" onclick="openAddModal()">+ Add bottle</button>
+</header>
+
+<div class="stats-row" id="stats"></div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search all carts…" oninput="render()">
+  </div>
+</div>
+
+<div class="cart-tabs" id="cart-tabs"></div>
+<div class="inventory" id="inventory"></div>
+
+<div class="cocktail-wrap">
+  <button class="cocktail-btn" onclick="suggestCocktails()">✦ What can I make tonight?</button>
+</div>
+
+<div class="modal-bg" id="add-modal" onclick="bgClick(event,'add-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Add a bottle</h2>
+    <div class="field"><label>Bottle name</label><input type="text" id="m-name" placeholder="e.g. Bulleit Rye"></div>
+    <div class="field"><label>Cart</label>
+      <select id="m-cart">
+        <option value="Air Maroc">Air Maroc</option>
+        <option value="Atlas Air">Atlas Air</option>
+        <option value="Ice Cart">Ice Cart</option>
+      </select>
+    </div>
+    <div class="field"><label>Category</label>
+      <select id="m-cat">
+        <option>Whiskey</option><option>Bourbon</option><option>Scotch</option>
+        <option>Gin</option><option>Vodka</option><option>Rum</option>
+        <option>Tequila</option><option>Mezcal</option><option>Brandy</option>
+        <option>Liqueur</option><option>Wine</option><option>Beer</option>
+        <option>Vermouth</option><option>Bitters</option><option>Mixer</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Quantity</label><input type="number" id="m-qty" value="1" min="0" max="99"></div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="m-notes" placeholder="e.g. 750ml, birthday gift…"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn-save" onclick="addBottle()">Add bottle</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="cocktail-modal" onclick="bgClick(event,'cocktail-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Tonight's options</h2>
+    <div class="cocktail-result" id="cocktail-result"></div>
+    <div class="modal-actions">
+      <button class="btn-save" style="flex:1" onclick="closeModal('cocktail-modal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CARTS = ['All', 'Air Maroc', 'Atlas Air', 'Ice Cart'];
+const CART_COLORS = { 'Air Maroc': '#7F77DD', 'Atlas Air': '#1D9E75', 'Ice Cart': '#378ADD' };
+const CAT_COLORS = {
+  Whiskey:'#7F77DD', Bourbon:'#C17E2A', Scotch:'#8B5A2B', Gin:'#2E8B57',
+  Vodka:'#9E9E9E', Rum:'#C0392B', Tequila:'#27AE60', Mezcal:'#1A7A46',
+  Brandy:'#A0522D', Liqueur:'#8E44AD', Wine:'#C0392B', Beer:'#E67E22',
+  Vermouth:'#2980B9', Bitters:'#E74C3C', Mixer:'#7F8C8D', Other:'#95A5A6'
+};
+
+let inventory;
+try { inventory = JSON.parse(localStorage.getItem('hb_carts_v1') || 'null'); } catch(e) {}
+if (!inventory) inventory = [
+  {id:1,  name:'Bulleit Bourbon',     cart:'Air Maroc', cat:'Bourbon',  qty:1, notes:''},
+  {id:2,  name:"Hendrick's Gin",      cart:'Air Maroc', cat:'Gin',      qty:2, notes:''},
+  {id:3,  name:'Campari',             cart:'Air Maroc', cat:'Liqueur',  qty:1, notes:''},
+  {id:4,  name:'Sweet Vermouth',      cart:'Air Maroc', cat:'Vermouth', qty:1, notes:''},
+  {id:5,  name:"Tito's Vodka",        cart:'Atlas Air', cat:'Vodka',    qty:1, notes:''},
+  {id:6,  name:'Diplomatico Rum',     cart:'Atlas Air', cat:'Rum',      qty:1, notes:''},
+  {id:7,  name:'Espolòn Tequila',     cart:'Atlas Air', cat:'Tequila',  qty:0, notes:'Restock soon'},
+  {id:8,  name:'Angostura Bitters',   cart:'Atlas Air', cat:'Bitters',  qty:1, notes:''},
+  {id:9,  name:'Simple Syrup',        cart:'Ice Cart',  cat:'Mixer',    qty:2, notes:'Homemade'},
+  {id:10, name:'Tonic Water',         cart:'Ice Cart',  cat:'Mixer',    qty:3, notes:''},
+  {id:11, name:'Club Soda',           cart:'Ice Cart',  cat:'Mixer',    qty:2, notes:''},
+];
+let nextId = Math.max(0, ...inventory.map(i => i.id)) + 1;
+let activeCart = 'All';
+
+function save() {
+  localStorage.setItem('hb_carts_v1', JSON.stringify(inventory));
+  const d = new Date();
+  document.getElementById('last-updated').textContent =
+    'Updated ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function render() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+
+  const total = inventory.length;
+  const inStock = inventory.filter(i => i.qty > 0).length;
+  const out = inventory.filter(i => i.qty === 0).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Bottles</div></div>
+    <div class="stat-card"><div class="stat-num">${inStock}</div><div class="stat-label">In stock</div></div>
+    <div class="stat-card"><div class="stat-num">${out}</div><div class="stat-label">Out</div></div>`;
+
+  document.getElementById('cart-tabs').innerHTML = CARTS.map(c => {
+    const count = c === 'All' ? inventory.length : inventory.filter(i => i.cart === c).length;
+    const col = CART_COLORS[c] || '';
+    return `<button class="tab ${activeCart === c ? 'active' : ''}" onclick="setCart('${c}')">
+      ${c}<span class="cart-badge" style="background:${col ? col + '18' : 'rgba(0,0,0,0.06)'};color:${col || 'inherit'}">${count}</span>
+    </button>`;
+  }).join('');
+
+  let items = inventory.filter(i => {
+    if (activeCart !== 'All' && i.cart !== activeCart) return false;
+    if (q && !i.name.toLowerCase().includes(q) && !i.cat.toLowerCase().includes(q) && !i.cart.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!items.length) {
+    document.getElementById('inventory').innerHTML = '<div class="empty">No bottles found</div>';
+    return;
+  }
+
+  let html = '';
+  if (activeCart === 'All') {
+    CARTS.filter(c => c !== 'All').forEach(cartName => {
+      const cartItems = items.filter(i => i.cart === cartName);
+      if (!cartItems.length) return;
+      const col = CART_COLORS[cartName];
+      html += `<div class="section-label cart-label" style="color:${col};border-left:3px solid ${col};border-radius:0">${cartName}</div>`;
+      cartItems.forEach(item => html += itemHtml(item, true));
+    });
+  } else {
+    const cats = [...new Set(items.map(i => i.cat))];
+    cats.forEach(cat => {
+      html += `<div class="section-label">${cat}</div>`;
+      items.filter(i => i.cat === cat).forEach(item => html += itemHtml(item, false));
+    });
+  }
+  document.getElementById('inventory').innerHTML = html;
+}
+
+function itemHtml(item, showCart) {
+  return `<div class="item">
+    <div class="item-dot" style="background:${CAT_COLORS[item.cat] || '#888'}"></div>
+    <div class="item-info">
+      <div class="item-name">${item.name}${item.qty === 0 ? '<span class="badge-out">out</span>' : ''}</div>
+      <div class="item-sub">${showCart ? item.cart + ' · ' : ''}${item.cat}${item.notes ? ' · ' + item.notes : ''}</div>
+    </div>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
+      <span class="qty-num">${item.qty}</span>
+      <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+    </div>
+    <button class="del-btn" onclick="deleteItem(${item.id})" title="Remove">×</button>
+  </div>`;
+}
+
+function setCart(c) { activeCart = c; render(); }
+function changeQty(id, d) {
+  const i = inventory.find(x => x.id === id);
+  if (i) { i.qty = Math.max(0, i.qty + d); save(); render(); }
+}
+function deleteItem(id) {
+  if (!confirm('Remove this bottle?')) return;
+  inventory = inventory.filter(x => x.id !== id);
+  save(); render();
+}
+
+function openAddModal() {
+  document.getElementById('m-name').value = '';
+  document.getElementById('m-qty').value = 1;
+  document.getElementById('m-notes').value = '';
+  if (activeCart !== 'All') document.getElementById('m-cart').value = activeCart;
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('m-name').focus(), 80);
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function bgClick(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+function addBottle() {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) { document.getElementById('m-name').focus(); return; }
+  inventory.push({
+    id: nextId++,
+    name,
+    cart: document.getElementById('m-cart').value,
+    cat: document.getElementById('m-cat').value,
+    qty: parseInt(document.getElementById('m-qty').value) || 1,
+    notes: document.getElementById('m-notes').value.trim()
+  });
+  save(); render();
+  closeModal('add-modal');
+}
+
+async function suggestCocktails() {
+  const inStock = inventory.filter(i => i.qty > 0).map(i => i.name);
+  if (inStock.length < 2) { alert('Add at least 2 bottles to get cocktail suggestions.'); return; }
+  document.getElementById('cocktail-result').innerHTML =
+    '<div class="dot-pulse"><span></span><span></span><span></span></div>';
+  document.getElementById('cocktail-modal').classList.add('open');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `My home bar has: ${inStock.join(', ')}.\n\nSuggest 5 cocktails I can make with what I have. For each give the name, key ingredients from my list, and a 1-sentence method. Only suggest drinks where I have the core spirits. Format each with the cocktail name on its own line.`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || 'No suggestions returned.';
+    document.getElementById('cocktail-result').textContent = text;
+  } catch(e) {
+    document.getElementById('cocktail-result').textContent = 'Could not reach the AI service. Check your connection and try again.';
+  }
+}
+
+render();
+</script>
+</body>
+</html>
