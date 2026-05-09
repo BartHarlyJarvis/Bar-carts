@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #FAF8F3;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #1A1714;
+    --muted: #7A746C;
+    --accent: #2E1A0E;
+    --amber: #C17E2A;
+    --amber-light: #FDF3E3;
+    --amber-dark: #7A4F0F;
+    --red: #B94040;
+    --red-light: #FDF0EF;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; }
+
+  .site-header { background: var(--accent); color: #FAF8F3; padding: 2rem 1.5rem 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+  .site-header h1 { font-family: 'DM Serif Display', serif; font-size: 32px; font-weight: 400; }
+  .site-header p { font-size: 12px; opacity: 0.55; margin-top: 3px; }
+  .add-btn { background: var(--amber); color: white; border: none; border-radius: var(--radius-sm); padding: 9px 16px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0; }
+  .add-btn:hover { background: var(--amber-dark); }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 1.25rem 1.25rem 0; }
+  .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.875rem 1rem; text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 500; font-family: 'DM Serif Display', serif; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .controls { padding: 1rem 1.25rem 0.5rem; }
+  .search-wrap { position: relative; }
+  .search-wrap input { width: 100%; padding: 9px 12px 9px 34px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--surface); color: var(--text); outline: none; }
+  .search-wrap input:focus { border-color: var(--amber); }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+  .cart-tabs { display: flex; padding: 0 1.25rem; border-bottom: 0.5px solid var(--border); overflow-x: auto; scrollbar-width: none; margin-top: 0.75rem; }
+  .cart-tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; font-size: 13px; padding: 10px 14px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: color 0.15s; }
+  .tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .cart-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 100px; margin-left: 5px; font-weight: 400; }
+
+  .inventory { padding: 0 1.25rem; }
+  .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0.875rem 0 0.4rem; }
+
+  .item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 7px; transition: border-color 0.15s; }
+  .item:hover { border-color: var(--border-strong); }
+  .label-icon { flex-shrink: 0; width: 32px; height: 44px; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .item-sub { font-size: 12px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .badge-out { font-size: 10px; padding: 2px 7px; border-radius: 100px; background: var(--red-light); color: var(--red); font-weight: 500; }
+
+  .fill-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px 2px 5px; border-radius: 100px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+  .fill-pill:hover { opacity: 0.75; }
+  .fill-dots { display: inline-flex; gap: 2px; align-items: center; }
+  .fill-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+  .qty-ctrl { display: flex; align-items: center; gap: 7px; }
+  .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: 0.5px solid var(--border-strong); background: var(--bg); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: background 0.1s; font-family: inherit; }
+  .qty-btn:hover { background: var(--amber-light); border-color: var(--amber); }
+  .qty-num { font-size: 15px; font-weight: 500; min-width: 20px; text-align: center; }
+  .del-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; cursor: pointer; color: var(--muted); font-size: 18px; display: flex; align-items: center; justify-content: center; font-family: inherit; transition: color 0.1s; }
+  .del-btn:hover { color: var(--red); }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 14px; }
+
+  .cocktail-wrap { padding: 0.25rem 1.25rem 0; }
+  .cocktail-btn { width: 100%; background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 13px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, border-color 0.15s; }
+  .cocktail-btn:hover { background: var(--amber-light); border-color: var(--amber); }
+
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(20,14,8,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 1.5rem; width: 100%; max-width: 500px; max-height: 92vh; overflow-y: auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 1.25rem; }
+  .modal h2 { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; margin-bottom: 1.25rem; }
+  .field { margin-bottom: 0.875rem; }
+  .field label { display: block; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 10px 12px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 15px; background: var(--bg); color: var(--text); outline: none; appearance: none; }
+  .field input:focus, .field select:focus { border-color: var(--amber); background: white; }
+
+  .fill-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fill-opt { flex: 1; min-width: 60px; padding: 8px 4px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); font-family: inherit; font-size: 12px; text-align: center; color: var(--text); transition: all 0.15s; }
+  .fill-opt.selected { border-color: var(--accent); background: var(--amber-light); font-weight: 500; color: var(--accent); }
+  .fill-opt-dot { display: flex; justify-content: center; gap: 2px; margin-bottom: 4px; }
+  .fill-opt-dot span { width: 5px; height: 5px; border-radius: 50%; }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 1.5rem; }
+  .btn-cancel { flex: 1; padding: 12px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); background: transparent; font-family: inherit; font-size: 15px; cursor: pointer; color: var(--muted); }
+  .btn-save { flex: 2; padding: 12px; border: none; border-radius: var(--radius-sm); background: var(--accent); color: #FAF8F3; font-family: inherit; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-save:hover { background: #3D2416; }
+  .cocktail-result { font-size: 14px; color: var(--text); line-height: 1.75; white-space: pre-wrap; min-height: 80px; }
+  .dot-pulse { display: flex; gap: 4px; align-items: center; }
+  .dot-pulse span { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+  .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <h1>Home Bar</h1>
+    <p id="last-updated">Tap + to add a bottle</p>
+  </div>
+  <button class="add-btn" onclick="openAddModal()">+ Add bottle</button>
+</header>
+
+<div class="stats-row" id="stats"></div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search all carts…" oninput="render()">
+  </div>
+</div>
+
+<div class="cart-tabs" id="cart-tabs"></div>
+<div class="inventory" id="inventory"></div>
+
+<div class="cocktail-wrap">
+  <button class="cocktail-btn" onclick="suggestCocktails()">✦ What can I make tonight?</button>
+</div>
+
+<div class="modal-bg" id="add-modal" onclick="bgClick(event,'add-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Add a bottle</h2>
+    <div class="field"><label>Bottle name</label><input type="text" id="m-name" placeholder="e.g. Bulleit Rye"></div>
+    <div class="field"><label>Cart</label>
+      <select id="m-cart">
+        <option value="Air Maroc">Air Maroc</option>
+        <option value="Atlas Air">Atlas Air</option>
+        <option value="Ice Cart">Ice Cart</option>
+      </select>
+    </div>
+    <div class="field"><label>Category</label>
+      <select id="m-cat">
+        <option>Whiskey</option><option>Bourbon</option><option>Scotch</option>
+        <option>Gin</option><option>Vodka</option><option>Rum</option>
+        <option>Tequila</option><option>Mezcal</option><option>Brandy</option>
+        <option>Liqueur</option><option>Wine</option><option>Beer</option>
+        <option>Vermouth</option><option>Bitters</option><option>Mixer</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Quantity</label><input type="number" id="m-qty" value="1" min="0" max="99"></div>
+    <div class="field">
+      <label>Fill level</label>
+      <div class="fill-picker" id="add-fill-picker">
+        <button class="fill-opt selected" data-fill="full" onclick="pickAddFill(this)">
+          <div class="fill-opt-dot"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full
+        </button>
+        <button class="fill-opt" data-fill="3/4" onclick="pickAddFill(this)">
+          <div class="fill-opt-dot"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,0.12)"></span></div>¾
+        </button>
+        <button class="fill-opt" data-fill="1/2" onclick="pickAddFill(this)">
+          <div class="fill-opt-dot"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Half
+        </button>
+        <button class="fill-opt" data-fill="low" onclick="pickAddFill(this)">
+          <div class="fill-opt-dot"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Almost empty
+        </button>
+      </div>
+    </div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="m-notes" placeholder="e.g. 750ml, birthday gift…"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn-save" onclick="addBottle()">Add bottle</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="fill-modal" onclick="bgClick(event,'fill-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="fill-modal-title">Update fill level</h2>
+    <div class="fill-picker" id="fill-picker-main">
+      <button class="fill-opt" data-fill="full" onclick="pickMainFill(this)">
+        <div class="fill-opt-dot"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full
+      </button>
+      <button class="fill-opt" data-fill="3/4" onclick="pickMainFill(this)">
+        <div class="fill-opt-dot"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,0.12)"></span></div>¾
+      </button>
+      <button class="fill-opt" data-fill="1/2" onclick="pickMainFill(this)">
+        <div class="fill-opt-dot"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Half
+      </button>
+      <button class="fill-opt" data-fill="low" onclick="pickMainFill(this)">
+        <div class="fill-opt-dot"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Almost empty
+      </button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('fill-modal')">Cancel</button>
+      <button class="btn-save" style="flex:1" onclick="saveFill()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="cocktail-modal" onclick="bgClick(event,'cocktail-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Tonight's options</h2>
+    <div class="cocktail-result" id="cocktail-result"></div>
+    <div class="modal-actions">
+      <button class="btn-save" style="flex:1" onclick="closeModal('cocktail-modal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CARTS = ['All', 'Air Maroc', 'Atlas Air', 'Ice Cart'];
+const CART_COLORS = { 'Air Maroc': '#7F77DD', 'Atlas Air': '#1D9E75', 'Ice Cart': '#378ADD' };
+const FILLS = {
+  'full': { label: 'Full',         dots: 4, color: '#2E8B57', bg: '#EEF6EE' },
+  '3/4':  { label: '¾ full',       dots: 3, color: '#5B8AC4', bg: '#EAF1FA' },
+  '1/2':  { label: 'Half',         dots: 2, color: '#C17E2A', bg: '#FDF3E3' },
+  'low':  { label: 'Almost empty', dots: 1, color: '#B94040', bg: '#FDF0EF' },
+};
+const LABELS = {
+  Bourbon: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="bc${id}"><rect x="7" y="5" width="18" height="34" rx="3"/></clipPath></defs><rect x="7" y="5" width="18" height="34" rx="3" fill="#7B3F00"/><rect x="7" y="5" width="18" height="34" rx="3" fill="none" stroke="#C17E2A" stroke-width="0.8"/><rect x="9" y="7" width="14" height="30" rx="2" fill="#8B4513" clip-path="url(#bc${id})"/><rect x="11" y="9" width="10" height="13" rx="1" fill="#C17E2A" opacity="0.9"/><text x="16" y="17" text-anchor="middle" font-size="4.5" font-weight="700" fill="#3B1A00" font-family="serif" letter-spacing="0.3">BOURBON</text><text x="16" y="20.5" text-anchor="middle" font-size="3" fill="#5C2800" font-family="serif">STRAIGHT</text><line x1="11" y1="23" x2="21" y2="23" stroke="#C17E2A" stroke-width="0.5"/><text x="16" y="27" text-anchor="middle" font-size="3.5" fill="#C17E2A" font-family="serif">WHISKEY</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#8B4513" stroke="#C17E2A" stroke-width="0.5"/></svg>`,
+  Whiskey: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="3" fill="#2C1810"/><rect x="8" y="5" width="16" height="33" rx="3" fill="none" stroke="#8B6914" stroke-width="0.8"/><rect x="10" y="8" width="12" height="27" rx="1.5" fill="#1A0E08"/><rect x="11" y="10" width="10" height="11" rx="1" fill="#8B6914" opacity="0.85"/><text x="16" y="17" text-anchor="middle" font-size="4" font-weight="700" fill="#C8A840" font-family="serif">IRISH</text><text x="16" y="20" text-anchor="middle" font-size="3" fill="#8B6914" font-family="serif">WHISKEY</text><line x1="11" y1="22.5" x2="21" y2="22.5" stroke="#8B6914" stroke-width="0.4"/><text x="16" y="26" text-anchor="middle" font-size="3" fill="#8B6914" font-family="serif">EST. 1780</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#2C1810" stroke="#8B6914" stroke-width="0.5"/></svg>`,
+  Scotch: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="2" fill="#1C1C2E"/><rect x="8" y="5" width="16" height="33" rx="2" fill="none" stroke="#C0A060" stroke-width="0.8"/><rect x="10" y="8" width="12" height="27" rx="1" fill="#14142A"/><rect x="11" y="9" width="10" height="14" rx="1" fill="#2A2A4A" stroke="#C0A060" stroke-width="0.4"/><text x="16" y="14" text-anchor="middle" font-size="4" font-weight="700" fill="#C0A060" font-family="serif">SCOTCH</text><text x="16" y="17.5" text-anchor="middle" font-size="3" fill="#9080A0" font-family="serif">SINGLE MALT</text><line x1="11" y1="24" x2="21" y2="24" stroke="#C0A060" stroke-width="0.4"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#C0A060" font-family="serif">HIGHLANDS</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#1C1C2E" stroke="#C0A060" stroke-width="0.5"/></svg>`,
+  Gin: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="6" width="18" height="32" rx="9" fill="#E8F4F0"/><rect x="7" y="6" width="18" height="32" rx="9" fill="none" stroke="#2E8B57" stroke-width="0.8"/><rect x="9" y="8" width="14" height="28" rx="7" fill="#D0EDE4"/><text x="16" y="17" text-anchor="middle" font-size="5" font-weight="700" fill="#1A5C38" font-family="serif" letter-spacing="0.5">GIN</text><line x1="10" y1="22" x2="22" y2="22" stroke="#2E8B57" stroke-width="0.5"/><text x="16" y="26" text-anchor="middle" font-size="3" fill="#2E8B57" font-family="sans-serif">LONDON DRY</text><text x="16" y="30" text-anchor="middle" font-size="2.8" fill="#4A9970" font-family="sans-serif">DISTILLED</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#2E8B57"/></svg>`,
+  Vodka: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="2" fill="#F0F4F8"/><rect x="9" y="5" width="14" height="34" rx="2" fill="none" stroke="#7090B0" stroke-width="0.7"/><rect x="11" y="7" width="10" height="30" rx="1.5" fill="#E8EEF4"/><rect x="11" y="11" width="10" height="11" rx="1" fill="#1A3A5C"/><text x="16" y="18" text-anchor="middle" font-size="5" font-weight="700" fill="#E8EEF4" font-family="sans-serif">V</text><line x1="11" y1="23" x2="21" y2="23" stroke="#7090B0" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="3.5" fill="#1A3A5C" font-family="sans-serif" letter-spacing="0.5">VODKA</text><text x="16" y="31" text-anchor="middle" font-size="2.8" fill="#7090B0" font-family="sans-serif">TRIPLE DISTILLED</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#1A3A5C"/></svg>`,
+  Rum: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="6" width="18" height="32" rx="3" fill="#8B1A1A"/><rect x="7" y="6" width="18" height="32" rx="3" fill="none" stroke="#D4A017" stroke-width="0.8"/><rect x="9" y="8" width="14" height="28" rx="2" fill="#6B1010"/><rect x="10" y="10" width="12" height="14" rx="1.5" fill="#D4A017" opacity="0.15"/><rect x="10" y="10" width="12" height="14" rx="1.5" fill="none" stroke="#D4A017" stroke-width="0.5"/><text x="16" y="16" text-anchor="middle" font-size="5.5" font-weight="700" fill="#D4A017" font-family="serif">RUM</text><text x="16" y="20" text-anchor="middle" font-size="3" fill="#E8C060" font-family="serif">DARK</text><line x1="10" y1="25" x2="22" y2="25" stroke="#D4A017" stroke-width="0.5"/><text x="16" y="29" text-anchor="middle" font-size="3" fill="#D4A017" font-family="serif">CARIBBEAN</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#8B1A1A" stroke="#D4A017" stroke-width="0.5"/></svg>`,
+  Tequila: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="34" rx="3" fill="#F5F0D8"/><rect x="8" y="5" width="16" height="34" rx="3" fill="none" stroke="#4A7A2A" stroke-width="0.8"/><rect x="10" y="7" width="12" height="30" rx="2" fill="#EEE8C8"/><text x="16" y="15" text-anchor="middle" font-size="4" font-weight="700" fill="#2E5010" font-family="serif">100%</text><text x="16" y="19.5" text-anchor="middle" font-size="3.2" fill="#2E5010" font-family="serif">AGAVE</text><line x1="10" y1="24" x2="22" y2="24" stroke="#4A7A2A" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3.5" fill="#4A7A2A" font-family="serif">TEQUILA</text><text x="16" y="32" text-anchor="middle" font-size="2.8" fill="#6A9A4A" font-family="serif">BLANCO</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4A7A2A"/></svg>`,
+  Mezcal: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="6" width="16" height="32" rx="2" fill="#2C2010"/><rect x="8" y="6" width="16" height="32" rx="2" fill="none" stroke="#A08040" stroke-width="0.8"/><rect x="10" y="8" width="12" height="28" rx="1.5" fill="#1C1408"/><text x="16" y="15.5" text-anchor="middle" font-size="4" font-weight="700" fill="#D0A040" font-family="serif">MEZCAL</text><text x="16" y="19.5" text-anchor="middle" font-size="3" fill="#A08040" font-family="serif">ARTISANAL</text><line x1="11" y1="24" x2="21" y2="24" stroke="#A08040" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#A08040" font-family="serif">OAXACA</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#2C2010" stroke="#A08040" stroke-width="0.5"/></svg>`,
+  Liqueur: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="5" width="18" height="33" rx="9" fill="#C41E3A"/><rect x="7" y="5" width="18" height="33" rx="9" fill="none" stroke="#FF6B8A" stroke-width="0.7"/><rect x="9" y="7" width="14" height="29" rx="7" fill="#A01830"/><text x="16" y="17" text-anchor="middle" font-size="4.5" font-weight="700" fill="#FFD0D8" font-family="serif">BITTER</text><line x1="10" y1="19.5" x2="22" y2="19.5" stroke="#FF6B8A" stroke-width="0.5"/><text x="16" y="24" text-anchor="middle" font-size="3" fill="#FFD0D8" font-family="serif">APERITIVO</text><text x="16" y="28" text-anchor="middle" font-size="2.8" fill="#FF8AAA" font-family="serif">25% ALC/VOL</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#C41E3A" stroke="#FF6B8A" stroke-width="0.5"/></svg>`,
+  Vermouth: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="3" fill="#4A0E0E"/><rect x="8" y="5" width="16" height="33" rx="3" fill="none" stroke="#C08040" stroke-width="0.8"/><rect x="10" y="7" width="12" height="29" rx="2" fill="#380A0A"/><text x="16" y="14.5" text-anchor="middle" font-size="3.5" font-weight="700" fill="#C08040" font-family="serif">SWEET</text><text x="16" y="18.5" text-anchor="middle" font-size="4" font-weight="700" fill="#D09050" font-family="serif">VERMOUTH</text><line x1="11" y1="24" x2="21" y2="24" stroke="#C08040" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#C08040" font-family="serif">ROSSO</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4A0E0E" stroke="#C08040" stroke-width="0.5"/></svg>`,
+  Bitters: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="4" width="12" height="36" rx="2" fill="#1A0A00"/><rect x="10" y="4" width="12" height="36" rx="2" fill="none" stroke="#CC4400" stroke-width="0.8"/><rect x="11" y="6" width="10" height="32" rx="1.5" fill="#110600"/><rect x="11" y="9" width="10" height="16" rx="1" fill="#CC4400" opacity="0.18"/><text x="16" y="14" text-anchor="middle" font-size="3.2" font-weight="700" fill="#FF6622" font-family="sans-serif">AROMATIC</text><text x="16" y="18" text-anchor="middle" font-size="4.5" font-weight="700" fill="#FF6622" font-family="serif">BITTERS</text><line x1="11" y1="26" x2="21" y2="26" stroke="#CC4400" stroke-width="0.5"/><text x="16" y="30" text-anchor="middle" font-size="3" fill="#CC4400" font-family="sans-serif">ANGOSTURA</text><rect x="14" y="1" width="4" height="4" rx="1" fill="#CC4400"/></svg>`,
+  Wine: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="2" width="8" height="6" rx="1" fill="#4A1020"/><rect x="10" y="7" width="12" height="32" rx="6" fill="#6B1830"/><rect x="10" y="7" width="12" height="32" rx="6" fill="none" stroke="#9B3858" stroke-width="0.7"/><rect x="12" y="9" width="8" height="28" rx="4" fill="#551428"/><text x="16" y="21" text-anchor="middle" font-size="3.5" font-weight="700" fill="#F0C8D0" font-family="serif">VIN</text><line x1="12" y1="23" x2="20" y2="23" stroke="#9B3858" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="2.8" fill="#D08090" font-family="serif">ROUGE</text></svg>`,
+  Brandy: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="14" width="18" height="24" rx="3" fill="#6B2E00"/><rect x="7" y="14" width="18" height="24" rx="3" fill="none" stroke="#C87820" stroke-width="0.8"/><ellipse cx="16" cy="14" rx="9" ry="5" fill="#7A3500"/><ellipse cx="16" cy="14" rx="9" ry="5" fill="none" stroke="#C87820" stroke-width="0.8"/><rect x="14" y="4" width="4" height="11" rx="1" fill="#5A2800"/><rect x="9" y="17" width="14" height="18" rx="2" fill="#581E00"/><text x="16" y="24" text-anchor="middle" font-size="3.5" font-weight="700" fill="#C87820" font-family="serif">BRANDY</text><text x="16" y="28" text-anchor="middle" font-size="3" fill="#A06010" font-family="serif">V.S.O.P.</text><line x1="9" y1="30" x2="23" y2="30" stroke="#C87820" stroke-width="0.4"/><text x="16" y="34" text-anchor="middle" font-size="2.8" fill="#C87820" font-family="serif">COGNAC</text></svg>`,
+  Mixer: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="34" rx="3" fill="#E8F4FF"/><rect x="8" y="5" width="16" height="34" rx="3" fill="none" stroke="#4090C0" stroke-width="0.7"/><rect x="10" y="7" width="12" height="30" rx="2" fill="#D8ECFA"/><circle cx="16" cy="15" r="5" fill="#4090C0" opacity="0.15"/><circle cx="16" cy="15" r="3" fill="none" stroke="#4090C0" stroke-width="0.6"/><circle cx="16" cy="15" r="1" fill="#4090C0"/><text x="16" y="24" text-anchor="middle" font-size="3.5" font-weight="500" fill="#1A5080" font-family="sans-serif">MIXER</text><line x1="10" y1="26" x2="22" y2="26" stroke="#4090C0" stroke-width="0.4"/><text x="16" y="30" text-anchor="middle" font-size="3" fill="#4090C0" font-family="sans-serif">TONIC</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4090C0"/></svg>`,
+  Beer: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="3" fill="#C87820"/><rect x="9" y="5" width="14" height="34" rx="3" fill="none" stroke="#E8A030" stroke-width="0.7"/><rect x="11" y="7" width="10" height="30" rx="2" fill="#A06010"/><rect x="11" y="7" width="10" height="7" rx="2" fill="#F0E8D0"/><text x="16" y="20" text-anchor="middle" font-size="4.5" font-weight="700" fill="#F0D060" font-family="serif">ALE</text><line x1="11" y1="22.5" x2="21" y2="22.5" stroke="#E8A030" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="3" fill="#E8A030" font-family="serif">CRAFT BREW</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#C87820" stroke="#E8A030" stroke-width="0.5"/></svg>`,
+  Other: (id) => `<svg width="32" height="44" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="3" fill="#404040"/><rect x="9" y="5" width="14" height="34" rx="3" fill="none" stroke="#808080" stroke-width="0.7"/><rect x="11" y="8" width="10" height="28" rx="2" fill="#303030"/><text x="16" y="20" text-anchor="middle" font-size="5" font-weight="700" fill="#B0B0B0" font-family="serif">?</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#505050" stroke="#808080" stroke-width="0.5"/></svg>`,
+};
+
+function getLabel(cat, id) { return (LABELS[cat] || LABELS['Other'])(id); }
+
+function fillPill(fill, id) {
+  const f = FILLS[fill] || FILLS['full'];
+  const dots = Array.from({length:4}, (_,i) =>
+    `<span class="fill-dot" style="background:${i < f.dots ? f.color : 'rgba(0,0,0,0.12)'}"></span>`
+  ).join('');
+  return `<button class="fill-pill" style="background:${f.bg};color:${f.color}" onclick="openFillModal(${id})" title="Tap to update fill level">
+    <span class="fill-dots">${dots}</span>${f.label}
+  </button>`;
+}
+
+let inventory;
+try { inventory = JSON.parse(localStorage.getItem('hb_v4') || 'null'); } catch(e) {}
+if (!inventory) inventory = [
+  {id:1,  name:'Bulleit Bourbon',   cart:'Air Maroc', cat:'Bourbon',  qty:1, fill:'full', notes:''},
+  {id:2,  name:"Hendrick's Gin",    cart:'Air Maroc', cat:'Gin',      qty:2, fill:'3/4',  notes:''},
+  {id:3,  name:'Campari',           cart:'Air Maroc', cat:'Liqueur',  qty:1, fill:'1/2',  notes:''},
+  {id:4,  name:'Sweet Vermouth',    cart:'Air Maroc', cat:'Vermouth', qty:1, fill:'full', notes:''},
+  {id:5,  name:"Tito's Vodka",      cart:'Atlas Air', cat:'Vodka',    qty:1, fill:'3/4',  notes:''},
+  {id:6,  name:'Diplomatico Rum',   cart:'Atlas Air', cat:'Rum',      qty:1, fill:'full', notes:''},
+  {id:7,  name:'Espolòn Tequila',   cart:'Atlas Air', cat:'Tequila',  qty:0, fill:'low',  notes:'Restock soon'},
+  {id:8,  name:'Angostura Bitters', cart:'Atlas Air', cat:'Bitters',  qty:1, fill:'1/2',  notes:''},
+  {id:9,  name:'Simple Syrup',      cart:'Ice Cart',  cat:'Mixer',    qty:2, fill:'full', notes:'Homemade'},
+  {id:10, name:'Tonic Water',       cart:'Ice Cart',  cat:'Mixer',    qty:3, fill:'3/4',  notes:''},
+  {id:11, name:'Club Soda',         cart:'Ice Cart',  cat:'Mixer',    qty:2, fill:'full', notes:''},
+];
+let nextId = Math.max(0, ...inventory.map(i => i.id)) + 1;
+let activeCart = 'All';
+let editingFillId = null;
+
+function save() {
+  localStorage.setItem('hb_v4', JSON.stringify(inventory));
+  const d = new Date();
+  document.getElementById('last-updated').textContent =
+    'Updated ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function render() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${inventory.length}</div><div class="stat-label">Bottles</div></div>
+    <div class="stat-card"><div class="stat-num">${inventory.filter(i=>i.qty>0).length}</div><div class="stat-label">In stock</div></div>
+    <div class="stat-card"><div class="stat-num">${inventory.filter(i=>i.qty===0).length}</div><div class="stat-label">Out</div></div>`;
+
+  document.getElementById('cart-tabs').innerHTML = CARTS.map(c => {
+    const count = c === 'All' ? inventory.length : inventory.filter(i => i.cart === c).length;
+    const col = CART_COLORS[c] || '';
+    return `<button class="tab ${activeCart===c?'active':''}" onclick="setCart('${c}')">
+      ${c}<span class="cart-badge" style="background:${col?col+'18':'rgba(0,0,0,0.06)'};color:${col||'inherit'}">${count}</span>
+    </button>`;
+  }).join('');
+
+  let items = inventory.filter(i => {
+    if (activeCart !== 'All' && i.cart !== activeCart) return false;
+    if (q && !i.name.toLowerCase().includes(q) && !i.cat.toLowerCase().includes(q) && !i.cart.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!items.length) { document.getElementById('inventory').innerHTML = '<div class="empty">No bottles found</div>'; return; }
+
+  let html = '';
+  if (activeCart === 'All') {
+    CARTS.filter(c => c !== 'All').forEach(cartName => {
+      const ci = items.filter(i => i.cart === cartName);
+      if (!ci.length) return;
+      const col = CART_COLORS[cartName];
+      html += `<div class="section-label" style="color:${col};border-left:3px solid ${col};padding-left:8px;border-radius:0">${cartName}</div>`;
+      ci.forEach(item => html += itemHtml(item, true));
+    });
+  } else {
+    const cats = [...new Set(items.map(i => i.cat))];
+    cats.forEach(cat => {
+      html += `<div class="section-label">${cat}</div>`;
+      items.filter(i => i.cat === cat).forEach(item => html += itemHtml(item, false));
+    });
+  }
+  document.getElementById('inventory').innerHTML = html;
+}
+
+function itemHtml(item, showCart) {
+  return `<div class="item">
+    <div class="label-icon">${getLabel(item.cat, item.id)}</div>
+    <div class="item-info">
+      <div class="item-name">${item.name}${item.qty===0?'<span class="badge-out">out</span>':''}</div>
+      <div class="item-sub">
+        ${showCart ? `<span>${item.cart}</span><span>·</span>` : ''}
+        <span>${item.cat}</span>
+        ${item.qty > 0 ? `<span>·</span>${fillPill(item.fill, item.id)}` : ''}
+        ${item.notes ? `<span>·</span><span>${item.notes}</span>` : ''}
+      </div>
+    </div>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+      <span class="qty-num">${item.qty}</span>
+      <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+    </div>
+    <button class="del-btn" onclick="deleteItem(${item.id})" title="Remove">×</button>
+  </div>`;
+}
+
+function setCart(c) { activeCart = c; render(); }
+function changeQty(id, d) {
+  const i = inventory.find(x => x.id === id);
+  if (i) { i.qty = Math.max(0, i.qty + d); save(); render(); }
+}
+function deleteItem(id) {
+  if (!confirm('Remove this bottle?')) return;
+  inventory = inventory.filter(x => x.id !== id);
+  save(); render();
+}
+
+function openAddModal() {
+  document.getElementById('m-name').value = '';
+  document.getElementById('m-qty').value = 1;
+  document.getElementById('m-notes').value = '';
+  if (activeCart !== 'All') document.getElementById('m-cart').value = activeCart;
+  document.querySelectorAll('#add-fill-picker .fill-opt').forEach(b => b.classList.toggle('selected', b.dataset.fill === 'full'));
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('m-name').focus(), 80);
+}
+function pickAddFill(btn) {
+  document.querySelectorAll('#add-fill-picker .fill-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function addBottle() {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) { document.getElementById('m-name').focus(); return; }
+  const sel = document.querySelector('#add-fill-picker .fill-opt.selected');
+  inventory.push({
+    id: nextId++, name,
+    cart: document.getElementById('m-cart').value,
+    cat: document.getElementById('m-cat').value,
+    qty: parseInt(document.getElementById('m-qty').value) || 1,
+    fill: sel ? sel.dataset.fill : 'full',
+    notes: document.getElementById('m-notes').value.trim()
+  });
+  save(); render(); closeModal('add-modal');
+}
+
+function openFillModal(id) {
+  editingFillId = id;
+  const item = inventory.find(x => x.id === id);
+  document.getElementById('fill-modal-title').textContent = item.name;
+  document.querySelectorAll('#fill-picker-main .fill-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.fill === item.fill);
+  });
+  document.getElementById('fill-modal').classList.add('open');
+}
+function pickMainFill(btn) {
+  document.querySelectorAll('#fill-picker-main .fill-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function saveFill() {
+  const sel = document.querySelector('#fill-picker-main .fill-opt.selected');
+  if (sel && editingFillId) {
+    const item = inventory.find(x => x.id === editingFillId);
+    if (item) { item.fill = sel.dataset.fill; save(); render(); }
+  }
+  closeModal('fill-modal');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function bgClick(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+async function suggestCocktails() {
+  const inStock = inventory.filter(i => i.qty > 0).map(i => i.name);
+  if (inStock.length < 2) { alert('Add at least 2 bottles to get cocktail suggestions.'); return; }
+  document.getElementById('cocktail-result').innerHTML = '<div class="dot-pulse"><span></span><span></span><span></span></div>';
+  document.getElementById('cocktail-modal').classList.add('open');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `My home bar has: ${inStock.join(', ')}.\n\nSuggest 5 cocktails I can make. For each give the name, key ingredients from my list, and a 1-sentence method. Only suggest drinks where I have the core spirits. Format each with the cocktail name on its own line.`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || 'No suggestions returned.';
+    document.getElementById('cocktail-result').textContent = text;
+  } catch(e) {
+    document.getElementById('cocktail-result').textContent = 'Could not reach the AI service. Check your connection and try again.';
+  }
+}
+
+render();
+</script>
+</body>
+</html>
