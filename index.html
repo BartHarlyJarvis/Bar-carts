@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #FAF8F3; --surface: #FFFFFF; --border: rgba(0,0,0,0.1);
+  --border-strong: rgba(0,0,0,0.18); --text: #1A1714; --muted: #7A746C;
+  --accent: #2E1A0E; --amber: #C17E2A; --amber-light: #FDF3E3;
+  --amber-dark: #7A4F0F; --red: #B94040; --red-light: #FDF0EF;
+  --green: #2E8B57; --green-light: #EEF6EE;
+  --radius: 12px; --radius-sm: 8px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; }
+
+.site-header { background: var(--accent); color: #FAF8F3; padding: 1.75rem 1.25rem 1.25rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+.site-header h1 { font-family: 'DM Serif Display', serif; font-size: 30px; font-weight: 400; }
+.hdr-sub { font-size: 11px; opacity: 0.55; margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.4); flex-shrink: 0; transition: background 0.3s; }
+.sync-dot.ok   { background: #5DCAA5; }
+.sync-dot.err  { background: #F0997B; }
+.sync-dot.busy { background: #FAC775; animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:.4} 50%{opacity:1} }
+.hdr-btns { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.btn-amber { background: var(--amber); color: #fff; border: none; border-radius: var(--radius-sm); padding: 8px 14px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.btn-amber:hover { background: var(--amber-dark); }
+.btn-light { background: rgba(255,255,255,0.13); color: #FAF8F3; border: 0.5px solid rgba(255,255,255,0.28); border-radius: var(--radius-sm); padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.btn-light:hover { background: rgba(255,255,255,0.22); }
+
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 1.1rem 1.25rem 0; }
+.stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: .75rem 1rem; text-align: center; }
+.stat-num { font-size: 22px; font-weight: 500; font-family: 'DM Serif Display', serif; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+
+.controls { padding: .875rem 1.25rem .4rem; }
+.srch { position: relative; }
+.srch input { width: 100%; padding: 9px 12px 9px 32px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--surface); color: var(--text); outline: none; }
+.srch input:focus { border-color: var(--amber); }
+.srch-ic { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+.tabs-outer { overflow-x: auto; scrollbar-width: none; border-bottom: 0.5px solid var(--border); margin-top: .5rem; }
+.tabs-outer::-webkit-scrollbar { display: none; }
+.tabs-inner { display: flex; padding: 0 1.25rem; width: max-content; }
+.tab { flex-shrink: 0; font-size: 13px; padding: 9px 13px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -.5px; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: color .15s; }
+.tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--accent); }
+.tab:hover:not(.active) { color: var(--text); }
+.tbadge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 100px; margin-left: 4px; }
+
+.list { padding: 0 1.25rem; }
+.sec-lbl { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: .75rem 0 .4rem; }
+.item { display: flex; align-items: center; gap: 11px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; margin-bottom: 6px; cursor: pointer; transition: border-color .15s; }
+.item:hover { border-color: var(--border-strong); }
+.lbl-icon { flex-shrink: 0; width: 30px; height: 42px; }
+.lbl-icon img { width: 30px; height: 42px; object-fit: cover; border-radius: 4px; border: 0.5px solid var(--border); }
+.item-info { flex: 1; min-width: 0; }
+.iname { font-size: 14px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.isub { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.badge-out { font-size: 10px; padding: 2px 6px; border-radius: 100px; background: var(--red-light); color: var(--red); font-weight: 500; }
+.fill-pill { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 7px 2px 4px; border-radius: 100px; font-weight: 500; border: none; cursor: pointer; font-family: inherit; }
+.fill-pill:hover { opacity: .75; }
+.fdots { display: inline-flex; gap: 2px; align-items: center; }
+.fdot { width: 5px; height: 5px; border-radius: 50%; }
+.qty-ctrl { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.qbtn { width: 27px; height: 27px; border-radius: 50%; border: 0.5px solid var(--border-strong); background: var(--bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); font-family: inherit; }
+.qbtn:hover { background: var(--amber-light); border-color: var(--amber); }
+.qnum { font-size: 14px; font-weight: 500; min-width: 18px; text-align: center; }
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: 14px; }
+
+.cw { padding: .25rem 1.25rem 0; }
+.cw-btn { width: 100%; background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 12px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s, border-color .15s; }
+.cw-btn:hover { background: var(--amber-light); border-color: var(--amber); }
+
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(20,14,8,.52); z-index: 100; align-items: flex-end; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 1.4rem; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; }
+.mhandle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 1.25rem; }
+.modal h2 { font-family: 'DM Serif Display', serif; font-size: 21px; font-weight: 400; margin-bottom: 1.1rem; }
+.field { margin-bottom: .8rem; }
+.field label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
+.field input, .field select { width: 100%; padding: 9px 11px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--bg); color: var(--text); outline: none; appearance: none; }
+.field input:focus, .field select:focus { border-color: var(--amber); background: #fff; }
+.fnote { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.55; }
+
+.fp { display: flex; gap: 5px; flex-wrap: wrap; }
+.fo { flex: 1; min-width: 58px; padding: 7px 4px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); font-family: inherit; font-size: 11px; text-align: center; color: var(--text); transition: all .15s; }
+.fo.sel { border-color: var(--accent); background: var(--amber-light); font-weight: 500; color: var(--accent); }
+.fo-dots { display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; }
+.fo-dots span { width: 5px; height: 5px; border-radius: 50%; }
+
+.photo-area { border: 1.5px dashed var(--border-strong); border-radius: var(--radius-sm); padding: .875rem; text-align: center; cursor: pointer; background: var(--bg); transition: border-color .15s; margin-bottom: 6px; }
+.photo-area:hover { border-color: var(--amber); }
+.photo-area p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.photo-area img { width: 100%; max-height: 160px; object-fit: contain; border-radius: 6px; }
+.photo-btns { display: flex; gap: 6px; margin-bottom: .5rem; }
+.photo-btns button { flex: 1; padding: 7px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; background: var(--surface); color: var(--text); font-family: inherit; }
+.photo-btns button:hover { background: var(--bg); }
+
+.macts { display: flex; gap: 8px; margin-top: 1.25rem; }
+.btn-cancel { flex:1; padding:11px; border:0.5px solid var(--border-strong); border-radius:var(--radius-sm); background:transparent; font-family:inherit; font-size:14px; cursor:pointer; color:var(--muted); }
+.btn-save   { flex:2; padding:11px; border:none; border-radius:var(--radius-sm); background:var(--accent); color:#FAF8F3; font-family:inherit; font-size:14px; font-weight:500; cursor:pointer; }
+.btn-save:hover { background:#3D2416; }
+.btn-danger { flex:1; padding:11px; border:0.5px solid var(--red); border-radius:var(--radius-sm); background:transparent; font-family:inherit; font-size:14px; cursor:pointer; color:var(--red); }
+.btn-green  { flex:2; padding:11px; border:none; border-radius:var(--radius-sm); background:var(--green); color:#fff; font-family:inherit; font-size:14px; font-weight:500; cursor:pointer; }
+.btn-green:hover { background:#236b43; }
+
+.detail-photo { width:100%; max-height:220px; object-fit:contain; border-radius:var(--radius-sm); margin-bottom:1rem; border:0.5px solid var(--border); }
+.detail-ph { width:100%; height:100px; border-radius:var(--radius-sm); margin-bottom:1rem; border:0.5px solid var(--border); background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; }
+.drow { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:0.5px solid rgba(0,0,0,.07); }
+.drow:last-child { border-bottom:none; }
+.drow .dl { font-size:12px; color:var(--muted); }
+.drow .dv { font-size:13px; font-weight:500; color:var(--text); text-align:right; display:flex; align-items:center; gap:5px; }
+
+.loc-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:.5rem; }
+.loc-chip { font-size:12px; padding:4px 10px; border-radius:100px; border:0.5px solid; display:inline-flex; align-items:center; gap:4px; }
+.chip-x { cursor:pointer; font-size:14px; margin-left:2px; }
+.chip-x:hover { opacity:.6; }
+
+/* Cloud sync section styles */
+.cloud-box { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-sm); padding:1rem; margin-bottom:1rem; }
+.cloud-box h3 { font-size:13px; font-weight:500; margin-bottom:.6rem; }
+.cloud-box .step { display:flex; gap:10px; margin-bottom:.6rem; align-items:flex-start; }
+.cloud-box .step-num { width:20px; height:20px; border-radius:50%; background:var(--accent); color:#FAF8F3; font-size:11px; font-weight:500; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.cloud-box .step p { font-size:12px; color:var(--muted); line-height:1.5; }
+.cloud-box .step a { color:var(--amber); }
+.sync-status-row { display:flex; align-items:center; gap:8px; padding:.75rem; background:var(--surface); border-radius:var(--radius-sm); border:0.5px solid var(--border); margin-bottom:.75rem; }
+.sync-status-row .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.sync-status-row p { font-size:12px; color:var(--muted); }
+.sync-status-row p strong { color:var(--text); }
+.row2 { display:flex; gap:8px; margin-top:.5rem; }
+.row2 button { flex:1; padding:9px; border:0.5px solid var(--border-strong); border-radius:var(--radius-sm); font-size:13px; cursor:pointer; font-family:inherit; background:var(--surface); color:var(--text); }
+.row2 button:hover { background:var(--bg); }
+.row2 button.primary { background:var(--accent); color:#FAF8F3; border-color:var(--accent); font-weight:500; }
+.row2 button.primary:hover { background:#3D2416; }
+
+.ckt-result { font-size:14px; color:var(--text); line-height:1.75; white-space:pre-wrap; min-height:80px; }
+.dot-pulse { display:flex; gap:4px; align-items:center; }
+.dot-pulse span { width:6px; height:6px; border-radius:50%; background:var(--amber); animation:dp 1.2s ease-in-out infinite; }
+.dot-pulse span:nth-child(2){animation-delay:.2s} .dot-pulse span:nth-child(3){animation-delay:.4s}
+@keyframes dp { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+
+.toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:var(--accent); color:#FAF8F3; padding:10px 20px; border-radius:100px; font-size:13px; font-weight:500; z-index:200; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; max-width:90vw; text-align:center; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <h1>Home Bar</h1>
+    <div class="hdr-sub">
+      <span class="sync-dot" id="sync-dot"></span>
+      <span id="sync-label">Local only</span>
+    </div>
+  </div>
+  <div class="hdr-btns">
+    <button class="btn-light" onclick="openCloud()">☁ Sync</button>
+    <button class="btn-light" onclick="openManageLocs()">+ Location</button>
+    <button class="btn-amber" onclick="openAdd()">+ Bottle</button>
+  </div>
+</header>
+
+<div class="stats-row" id="stats"></div>
+<div class="controls"><div class="srch"><span class="srch-ic">⌕</span><input type="text" id="search" placeholder="Search all locations…" oninput="render()"></div></div>
+<div class="tabs-outer"><div class="tabs-inner" id="tabs"></div></div>
+<div class="list" id="list"></div>
+<div class="cw"><button class="cw-btn" onclick="openCocktails()">✦ What can I make tonight?</button></div>
+<div class="toast" id="toast"></div>
+
+<!-- ── CLOUD SYNC MODAL ── -->
+<div class="modal-bg" id="cloud-modal" onclick="bgClick(event,'cloud-modal')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <h2>Cloud sync & backup</h2>
+
+    <div class="cloud-box">
+      <h3>☁ Auto-sync setup</h3>
+      <div class="step"><div class="step-num">1</div><p>Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> → sign up free → copy your <strong>Master Key</strong> from the API Keys page.</p></div>
+      <div class="step"><div class="step-num">2</div><p>Paste your Master Key below and tap <strong>Save key</strong>.</p></div>
+      <div class="step"><div class="step-num">3</div><p>Tap <strong>Create new bin</strong> once. Copy the Bin ID that appears and save it — you'll need it on other devices.</p></div>
+      <div class="step"><div class="step-num">4</div><p>On another device: paste both the key and the Bin ID, then tap <strong>Connect</strong>.</p></div>
+
+      <div class="field" style="margin-top:.75rem">
+        <label>Master Key</label>
+        <input type="password" id="jb-key" placeholder="$2a$10$…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Bin ID <span style="text-transform:none;font-weight:400;color:var(--muted)">(leave blank to create new)</span></label>
+        <input type="text" id="jb-bin" placeholder="64f3a2b1e41b4f5c3d2e1a0b">
+        <p class="fnote" id="bin-copy-hint" style="display:none;color:var(--green);font-weight:500"></p>
+      </div>
+
+      <div id="sync-status-row" class="sync-status-row" style="display:none">
+        <span class="dot" id="cloud-dot"></span>
+        <p id="cloud-status-p"></p>
+      </div>
+
+      <div class="row2">
+        <button onclick="saveCloudCreds()">Save key</button>
+        <button onclick="createBin()">Create new bin</button>
+        <button class="primary" onclick="connectBin()">Connect ↓</button>
+      </div>
+      <div class="row2" style="margin-top:6px">
+        <button onclick="pushCloud(false)">Push to cloud ↑</button>
+        <button onclick="pullCloud(false)">Pull from cloud ↓</button>
+      </div>
+    </div>
+
+    <div class="cloud-box">
+      <h3>💾 Manual backup — save to iCloud</h3>
+      <p class="fnote" style="margin-bottom:.75rem">Export a JSON file → tap Share → Save to Files → iCloud Drive. Import anytime to restore.</p>
+      <div class="row2">
+        <button onclick="exportJSON()">Export JSON ↓</button>
+        <button onclick="document.getElementById('import-input').click()">Import JSON ↑</button>
+      </div>
+      <input type="file" id="import-input" accept=".json,application/json" style="display:none" onchange="importJSON(event)">
+    </div>
+
+    <div class="macts"><button class="btn-save" style="flex:1" onclick="closeModal('cloud-modal')">Done</button></div>
+  </div>
+</div>
+
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-bg" id="detail-modal" onclick="bgClick(event,'detail-modal')">
+  <div class="modal"><div class="mhandle"></div><div id="detail-body"></div></div>
+</div>
+
+<!-- ── EDIT MODAL ── -->
+<div class="modal-bg" id="edit-modal" onclick="bgClick(event,'edit-modal')">
+  <div class="modal">
+    <div class="mhandle"></div><h2>Edit bottle</h2>
+    <div class="field"><label>Name</label><input type="text" id="e-name"></div>
+    <div class="field"><label>Location</label><select id="e-loc"></select></div>
+    <div class="field"><label>Category</label>
+      <select id="e-cat"><option>Whiskey</option><option>Bourbon</option><option>Scotch</option><option>Gin</option><option>Vodka</option><option>Rum</option><option>Tequila</option><option>Mezcal</option><option>Brandy</option><option>Liqueur</option><option>Wine</option><option>Beer</option><option>Vermouth</option><option>Bitters</option><option>Mixer</option><option>Other</option></select>
+    </div>
+    <div class="field"><label>Quantity</label><input type="number" id="e-qty" min="0" max="99"></div>
+    <div class="field"><label>Fill level</label>
+      <div class="fp" id="e-fp">
+        <button class="fo" data-fill="full" onclick="pf(this,'e-fp')"><div class="fo-dots"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full</button>
+        <button class="fo" data-fill="3/4"  onclick="pf(this,'e-fp')"><div class="fo-dots"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,.12)"></span></div>¾</button>
+        <button class="fo" data-fill="1/2"  onclick="pf(this,'e-fp')"><div class="fo-dots"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span></div>Half</button>
+        <button class="fo" data-fill="low"  onclick="pf(this,'e-fp')"><div class="fo-dots"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span></div>Almost empty</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Label photo</label>
+      <div class="photo-area" id="e-pa" onclick="ePhotoTap()"><div id="e-pp"></div><p id="e-ph">Tap to add a photo</p></div>
+      <div class="photo-btns">
+        <button onclick="ePhotoCamera()">📷 Camera</button>
+        <button onclick="ePhotoFile()">📁 Upload</button>
+        <button onclick="eClear()" style="color:var(--red)">Remove</button>
+      </div>
+      <input type="file" id="e-fi" accept="image/*" style="display:none" onchange="eFile(event)">
+      <input type="file" id="e-ci" accept="image/*" capture="environment" style="display:none" onchange="eFile(event)">
+    </div>
+    <div class="field"><label>Notes</label><input type="text" id="e-notes" placeholder="e.g. 750ml, gift…"></div>
+    <div class="macts">
+      <button class="btn-danger" onclick="delBottle()">Delete</button>
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD MODAL ── -->
+<div class="modal-bg" id="add-modal" onclick="bgClick(event,'add-modal')">
+  <div class="modal">
+    <div class="mhandle"></div><h2>Add a bottle</h2>
+    <div class="field"><label>Name</label><input type="text" id="a-name" placeholder="e.g. Bulleit Rye"></div>
+    <div class="field"><label>Location</label><select id="a-loc"></select></div>
+    <div class="field"><label>Category</label>
+      <select id="a-cat"><option>Whiskey</option><option>Bourbon</option><option>Scotch</option><option>Gin</option><option>Vodka</option><option>Rum</option><option>Tequila</option><option>Mezcal</option><option>Brandy</option><option>Liqueur</option><option>Wine</option><option>Beer</option><option>Vermouth</option><option>Bitters</option><option>Mixer</option><option>Other</option></select>
+    </div>
+    <div class="field"><label>Quantity</label><input type="number" id="a-qty" value="1" min="0" max="99"></div>
+    <div class="field"><label>Fill level</label>
+      <div class="fp" id="a-fp">
+        <button class="fo sel" data-fill="full" onclick="pf(this,'a-fp')"><div class="fo-dots"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full</button>
+        <button class="fo" data-fill="3/4"  onclick="pf(this,'a-fp')"><div class="fo-dots"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,.12)"></span></div>¾</button>
+        <button class="fo" data-fill="1/2"  onclick="pf(this,'a-fp')"><div class="fo-dots"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span></div>Half</button>
+        <button class="fo" data-fill="low"  onclick="pf(this,'a-fp')"><div class="fo-dots"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span></div>Almost empty</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Label photo (optional)</label>
+      <div class="photo-area" id="a-pa" onclick="aPhotoTap()"><div id="a-pp"></div><p id="a-ph">Tap to add a photo</p></div>
+      <div class="photo-btns">
+        <button onclick="aPhotoCamera()">📷 Camera</button>
+        <button onclick="aPhotoFile()">📁 Upload</button>
+        <button onclick="aClear()" style="color:var(--red)">Remove</button>
+      </div>
+      <input type="file" id="a-fi" accept="image/*" style="display:none" onchange="aFile(event)">
+      <input type="file" id="a-ci" accept="image/*" capture="environment" style="display:none" onchange="aFile(event)">
+    </div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="a-notes" placeholder="e.g. 750ml, gift…"></div>
+    <div class="macts">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn-save" onclick="addBottle()">Add bottle</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOCATIONS MODAL ── -->
+<div class="modal-bg" id="locs-modal" onclick="bgClick(event,'locs-modal')">
+  <div class="modal">
+    <div class="mhandle"></div><h2>Manage locations</h2>
+    <div class="field">
+      <label>Add new location</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="new-loc" placeholder="e.g. Patio Bar" style="flex:1">
+        <button class="btn-save" style="flex:0;padding:9px 16px;flex-shrink:0" onclick="addLoc()">Add</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>All locations</label>
+      <div class="loc-chips" id="loc-chips"></div>
+      <p class="fnote" style="margin-top:8px">Built-in locations can't be deleted. Custom locations can only be deleted when empty.</p>
+    </div>
+    <div class="macts"><button class="btn-save" style="flex:1" onclick="closeModal('locs-modal')">Done</button></div>
+  </div>
+</div>
+
+<!-- ── FILL MODAL ── -->
+<div class="modal-bg" id="fill-modal" onclick="bgClick(event,'fill-modal')">
+  <div class="modal">
+    <div class="mhandle"></div><h2 id="fill-title">Update fill level</h2>
+    <div class="fp" id="fill-main">
+      <button class="fo" data-fill="full" onclick="pf(this,'fill-main')"><div class="fo-dots"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full</button>
+      <button class="fo" data-fill="3/4"  onclick="pf(this,'fill-main')"><div class="fo-dots"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,.12)"></span></div>¾</button>
+      <button class="fo" data-fill="1/2"  onclick="pf(this,'fill-main')"><div class="fo-dots"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span></div>Half</button>
+      <button class="fo" data-fill="low"  onclick="pf(this,'fill-main')"><div class="fo-dots"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span><span style="background:rgba(0,0,0,.12)"></span></div>Almost empty</button>
+    </div>
+    <div class="macts">
+      <button class="btn-cancel" onclick="closeModal('fill-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveFill()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── COCKTAIL MODAL ── -->
+<div class="modal-bg" id="ckt-modal" onclick="bgClick(event,'ckt-modal')">
+  <div class="modal">
+    <div class="mhandle"></div><h2>Tonight's options</h2>
+    <div class="ckt-result" id="ckt-result"></div>
+    <div class="macts"><button class="btn-save" style="flex:1" onclick="closeModal('ckt-modal')">Done</button></div>
+  </div>
+</div>
+
+<script>
+/* ── CONSTANTS ── */
+const BUILTIN = ['Air Maroc','Atlas Air','Ice Cart','Downstairs Bar','Garage'];
+const LOC_COLOR = {'Air Maroc':'#7F77DD','Atlas Air':'#1D9E75','Ice Cart':'#378ADD','Downstairs Bar':'#C17E2A','Garage':'#7A746C'};
+const PALETTE  = ['#7F77DD','#1D9E75','#378ADD','#C17E2A','#7A746C','#C41E3A','#2E8B57','#8E44AD','#A08040','#5B8AC4'];
+const FILLS = {
+  'full':{label:'Full',        dots:4,color:'#2E8B57',bg:'#EEF6EE'},
+  '3/4' :{label:'¾ full',      dots:3,color:'#5B8AC4',bg:'#EAF1FA'},
+  '1/2' :{label:'Half',        dots:2,color:'#C17E2A',bg:'#FDF3E3'},
+  'low' :{label:'Almost empty',dots:1,color:'#B94040',bg:'#FDF0EF'}
+};
+const JB = 'https://api.jsonbin.io/v3';
+
+/* ── SVG LABELS ── */
+const LABELS = {
+  Bourbon:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="bc${id}"><rect x="7" y="5" width="18" height="34" rx="3"/></clipPath></defs><rect x="7" y="5" width="18" height="34" rx="3" fill="#7B3F00"/><rect x="7" y="5" width="18" height="34" rx="3" fill="none" stroke="#C17E2A" stroke-width="0.8"/><rect x="9" y="7" width="14" height="30" rx="2" fill="#8B4513" clip-path="url(#bc${id})"/><rect x="11" y="9" width="10" height="13" rx="1" fill="#C17E2A" opacity="0.9"/><text x="16" y="17" text-anchor="middle" font-size="4.5" font-weight="700" fill="#3B1A00" font-family="serif">BOURBON</text><text x="16" y="20.5" text-anchor="middle" font-size="3" fill="#5C2800" font-family="serif">STRAIGHT</text><line x1="11" y1="23" x2="21" y2="23" stroke="#C17E2A" stroke-width="0.5"/><text x="16" y="27" text-anchor="middle" font-size="3.5" fill="#C17E2A" font-family="serif">WHISKEY</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#8B4513" stroke="#C17E2A" stroke-width="0.5"/></svg>`,
+  Whiskey:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="3" fill="#2C1810"/><rect x="8" y="5" width="16" height="33" rx="3" fill="none" stroke="#8B6914" stroke-width="0.8"/><rect x="10" y="8" width="12" height="27" rx="1.5" fill="#1A0E08"/><rect x="11" y="10" width="10" height="11" rx="1" fill="#8B6914" opacity="0.85"/><text x="16" y="17" text-anchor="middle" font-size="4" font-weight="700" fill="#C8A840" font-family="serif">IRISH</text><text x="16" y="20" text-anchor="middle" font-size="3" fill="#8B6914" font-family="serif">WHISKEY</text><line x1="11" y1="22.5" x2="21" y2="22.5" stroke="#8B6914" stroke-width="0.4"/><text x="16" y="26" text-anchor="middle" font-size="3" fill="#8B6914" font-family="serif">EST. 1780</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#2C1810" stroke="#8B6914" stroke-width="0.5"/></svg>`,
+  Scotch:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="2" fill="#1C1C2E"/><rect x="8" y="5" width="16" height="33" rx="2" fill="none" stroke="#C0A060" stroke-width="0.8"/><rect x="10" y="8" width="12" height="27" rx="1" fill="#14142A"/><rect x="11" y="9" width="10" height="14" rx="1" fill="#2A2A4A" stroke="#C0A060" stroke-width="0.4"/><text x="16" y="14" text-anchor="middle" font-size="4" font-weight="700" fill="#C0A060" font-family="serif">SCOTCH</text><text x="16" y="17.5" text-anchor="middle" font-size="3" fill="#9080A0" font-family="serif">SINGLE MALT</text><line x1="11" y1="24" x2="21" y2="24" stroke="#C0A060" stroke-width="0.4"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#C0A060" font-family="serif">HIGHLANDS</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#1C1C2E" stroke="#C0A060" stroke-width="0.5"/></svg>`,
+  Gin:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="6" width="18" height="32" rx="9" fill="#E8F4F0"/><rect x="7" y="6" width="18" height="32" rx="9" fill="none" stroke="#2E8B57" stroke-width="0.8"/><rect x="9" y="8" width="14" height="28" rx="7" fill="#D0EDE4"/><text x="16" y="17" text-anchor="middle" font-size="5" font-weight="700" fill="#1A5C38" font-family="serif">GIN</text><line x1="10" y1="22" x2="22" y2="22" stroke="#2E8B57" stroke-width="0.5"/><text x="16" y="26" text-anchor="middle" font-size="3" fill="#2E8B57" font-family="sans-serif">LONDON DRY</text><text x="16" y="30" text-anchor="middle" font-size="2.8" fill="#4A9970" font-family="sans-serif">DISTILLED</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#2E8B57"/></svg>`,
+  Vodka:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="2" fill="#F0F4F8"/><rect x="9" y="5" width="14" height="34" rx="2" fill="none" stroke="#7090B0" stroke-width="0.7"/><rect x="11" y="7" width="10" height="30" rx="1.5" fill="#E8EEF4"/><rect x="11" y="11" width="10" height="11" rx="1" fill="#1A3A5C"/><text x="16" y="18" text-anchor="middle" font-size="5" font-weight="700" fill="#E8EEF4" font-family="sans-serif">V</text><line x1="11" y1="23" x2="21" y2="23" stroke="#7090B0" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="3.5" fill="#1A3A5C" font-family="sans-serif">VODKA</text><text x="16" y="31" text-anchor="middle" font-size="2.8" fill="#7090B0" font-family="sans-serif">TRIPLE DISTILLED</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#1A3A5C"/></svg>`,
+  Rum:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="6" width="18" height="32" rx="3" fill="#8B1A1A"/><rect x="7" y="6" width="18" height="32" rx="3" fill="none" stroke="#D4A017" stroke-width="0.8"/><rect x="9" y="8" width="14" height="28" rx="2" fill="#6B1010"/><rect x="10" y="10" width="12" height="14" rx="1.5" fill="none" stroke="#D4A017" stroke-width="0.5"/><text x="16" y="16" text-anchor="middle" font-size="5.5" font-weight="700" fill="#D4A017" font-family="serif">RUM</text><text x="16" y="20" text-anchor="middle" font-size="3" fill="#E8C060" font-family="serif">DARK</text><line x1="10" y1="25" x2="22" y2="25" stroke="#D4A017" stroke-width="0.5"/><text x="16" y="29" text-anchor="middle" font-size="3" fill="#D4A017" font-family="serif">CARIBBEAN</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#8B1A1A" stroke="#D4A017" stroke-width="0.5"/></svg>`,
+  Tequila:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="34" rx="3" fill="#F5F0D8"/><rect x="8" y="5" width="16" height="34" rx="3" fill="none" stroke="#4A7A2A" stroke-width="0.8"/><rect x="10" y="7" width="12" height="30" rx="2" fill="#EEE8C8"/><text x="16" y="15" text-anchor="middle" font-size="4" font-weight="700" fill="#2E5010" font-family="serif">100%</text><text x="16" y="19.5" text-anchor="middle" font-size="3.2" fill="#2E5010" font-family="serif">AGAVE</text><line x1="10" y1="24" x2="22" y2="24" stroke="#4A7A2A" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3.5" fill="#4A7A2A" font-family="serif">TEQUILA</text><text x="16" y="32" text-anchor="middle" font-size="2.8" fill="#6A9A4A" font-family="serif">BLANCO</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4A7A2A"/></svg>`,
+  Mezcal:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="6" width="16" height="32" rx="2" fill="#2C2010"/><rect x="8" y="6" width="16" height="32" rx="2" fill="none" stroke="#A08040" stroke-width="0.8"/><rect x="10" y="8" width="12" height="28" rx="1.5" fill="#1C1408"/><text x="16" y="15.5" text-anchor="middle" font-size="4" font-weight="700" fill="#D0A040" font-family="serif">MEZCAL</text><text x="16" y="19.5" text-anchor="middle" font-size="3" fill="#A08040" font-family="serif">ARTISANAL</text><line x1="11" y1="24" x2="21" y2="24" stroke="#A08040" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#A08040" font-family="serif">OAXACA</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#2C2010" stroke="#A08040" stroke-width="0.5"/></svg>`,
+  Liqueur:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="5" width="18" height="33" rx="9" fill="#C41E3A"/><rect x="7" y="5" width="18" height="33" rx="9" fill="none" stroke="#FF6B8A" stroke-width="0.7"/><rect x="9" y="7" width="14" height="29" rx="7" fill="#A01830"/><text x="16" y="17" text-anchor="middle" font-size="4.5" font-weight="700" fill="#FFD0D8" font-family="serif">BITTER</text><line x1="10" y1="19.5" x2="22" y2="19.5" stroke="#FF6B8A" stroke-width="0.5"/><text x="16" y="24" text-anchor="middle" font-size="3" fill="#FFD0D8" font-family="serif">APERITIVO</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#C41E3A" stroke="#FF6B8A" stroke-width="0.5"/></svg>`,
+  Vermouth:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="3" fill="#4A0E0E"/><rect x="8" y="5" width="16" height="33" rx="3" fill="none" stroke="#C08040" stroke-width="0.8"/><rect x="10" y="7" width="12" height="29" rx="2" fill="#380A0A"/><text x="16" y="14.5" text-anchor="middle" font-size="3.5" font-weight="700" fill="#C08040" font-family="serif">SWEET</text><text x="16" y="18.5" text-anchor="middle" font-size="4" font-weight="700" fill="#D09050" font-family="serif">VERMOUTH</text><line x1="11" y1="24" x2="21" y2="24" stroke="#C08040" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#C08040" font-family="serif">ROSSO</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4A0E0E" stroke="#C08040" stroke-width="0.5"/></svg>`,
+  Bitters:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="4" width="12" height="36" rx="2" fill="#1A0A00"/><rect x="10" y="4" width="12" height="36" rx="2" fill="none" stroke="#CC4400" stroke-width="0.8"/><rect x="11" y="6" width="10" height="32" rx="1.5" fill="#110600"/><text x="16" y="14" text-anchor="middle" font-size="3.2" font-weight="700" fill="#FF6622" font-family="sans-serif">AROMATIC</text><text x="16" y="18" text-anchor="middle" font-size="4.5" font-weight="700" fill="#FF6622" font-family="serif">BITTERS</text><line x1="11" y1="26" x2="21" y2="26" stroke="#CC4400" stroke-width="0.5"/><text x="16" y="30" text-anchor="middle" font-size="3" fill="#CC4400" font-family="sans-serif">ANGOSTURA</text><rect x="14" y="1" width="4" height="4" rx="1" fill="#CC4400"/></svg>`,
+  Wine:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="2" width="8" height="6" rx="1" fill="#4A1020"/><rect x="10" y="7" width="12" height="32" rx="6" fill="#6B1830"/><rect x="10" y="7" width="12" height="32" rx="6" fill="none" stroke="#9B3858" stroke-width="0.7"/><rect x="12" y="9" width="8" height="28" rx="4" fill="#551428"/><text x="16" y="21" text-anchor="middle" font-size="3.5" font-weight="700" fill="#F0C8D0" font-family="serif">VIN</text><line x1="12" y1="23" x2="20" y2="23" stroke="#9B3858" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="2.8" fill="#D08090" font-family="serif">ROUGE</text></svg>`,
+  Brandy:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="14" width="18" height="24" rx="3" fill="#6B2E00"/><rect x="7" y="14" width="18" height="24" rx="3" fill="none" stroke="#C87820" stroke-width="0.8"/><ellipse cx="16" cy="14" rx="9" ry="5" fill="#7A3500"/><ellipse cx="16" cy="14" rx="9" ry="5" fill="none" stroke="#C87820" stroke-width="0.8"/><rect x="14" y="4" width="4" height="11" rx="1" fill="#5A2800"/><rect x="9" y="17" width="14" height="18" rx="2" fill="#581E00"/><text x="16" y="24" text-anchor="middle" font-size="3.5" font-weight="700" fill="#C87820" font-family="serif">BRANDY</text><text x="16" y="28" text-anchor="middle" font-size="3" fill="#A06010" font-family="serif">V.S.O.P.</text></svg>`,
+  Mixer:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="34" rx="3" fill="#E8F4FF"/><rect x="8" y="5" width="16" height="34" rx="3" fill="none" stroke="#4090C0" stroke-width="0.7"/><rect x="10" y="7" width="12" height="30" rx="2" fill="#D8ECFA"/><circle cx="16" cy="15" r="5" fill="#4090C0" opacity="0.15"/><circle cx="16" cy="15" r="3" fill="none" stroke="#4090C0" stroke-width="0.6"/><circle cx="16" cy="15" r="1" fill="#4090C0"/><text x="16" y="24" text-anchor="middle" font-size="3.5" font-weight="500" fill="#1A5080" font-family="sans-serif">MIXER</text><line x1="10" y1="26" x2="22" y2="26" stroke="#4090C0" stroke-width="0.4"/><rect x="13" y="2" width="6" height="4" rx="1" fill="#4090C0"/></svg>`,
+  Beer:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="3" fill="#C87820"/><rect x="9" y="5" width="14" height="34" rx="3" fill="none" stroke="#E8A030" stroke-width="0.7"/><rect x="11" y="7" width="10" height="30" rx="2" fill="#A06010"/><rect x="11" y="7" width="10" height="7" rx="2" fill="#F0E8D0"/><text x="16" y="20" text-anchor="middle" font-size="4.5" font-weight="700" fill="#F0D060" font-family="serif">ALE</text><line x1="11" y1="22.5" x2="21" y2="22.5" stroke="#E8A030" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="3" fill="#E8A030" font-family="serif">CRAFT BREW</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#C87820" stroke="#E8A030" stroke-width="0.5"/></svg>`,
+  Other:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="3" fill="#404040"/><rect x="9" y="5" width="14" height="34" rx="3" fill="none" stroke="#808080" stroke-width="0.7"/><rect x="11" y="8" width="10" height="28" rx="2" fill="#303030"/><text x="16" y="20" text-anchor="middle" font-size="5" font-weight="700" fill="#B0B0B0" font-family="serif">?</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#505050" stroke="#808080" stroke-width="0.5"/></svg>`
+};
+
+/* ── HELPERS ── */
+function lbl(cat,id){ return (LABELS[cat]||LABELS.Other)(id); }
+function lc(loc){ return LOC_COLOR[loc]||PALETTE[S.locations.indexOf(loc)%PALETTE.length]||'#7A746C'; }
+function fpHtml(fill,id){
+  const f=FILLS[fill]||FILLS.full;
+  const dots=Array.from({length:4},(_,i)=>`<span class="fdot" style="background:${i<f.dots?f.color:'rgba(0,0,0,.12)'}"></span>`).join('');
+  return `<button class="fill-pill" style="background:${f.bg};color:${f.color}" onclick="event.stopPropagation();openFill(${id})"><span class="fdots">${dots}</span>${f.label}</button>`;
+}
+
+/* ── STATE ── */
+let S;
+try{ S=JSON.parse(localStorage.getItem('hb_v5')||'null'); }catch(e){}
+if(!S) S={
+  locations:['Air Maroc','Atlas Air','Ice Cart','Downstairs Bar','Garage'],
+  inventory:[
+    {id:1,name:'Bulleit Bourbon',loc:'Air Maroc',cat:'Bourbon',qty:1,fill:'full',notes:'',photo:null},
+    {id:2,name:"Hendrick's Gin",loc:'Air Maroc',cat:'Gin',qty:2,fill:'3/4',notes:'',photo:null},
+    {id:3,name:'Campari',loc:'Air Maroc',cat:'Liqueur',qty:1,fill:'1/2',notes:'',photo:null},
+    {id:4,name:'Sweet Vermouth',loc:'Air Maroc',cat:'Vermouth',qty:1,fill:'full',notes:'',photo:null},
+    {id:5,name:"Tito's Vodka",loc:'Atlas Air',cat:'Vodka',qty:1,fill:'3/4',notes:'',photo:null},
+    {id:6,name:'Diplomatico Rum',loc:'Atlas Air',cat:'Rum',qty:1,fill:'full',notes:'',photo:null},
+    {id:7,name:'Espolòn Tequila',loc:'Atlas Air',cat:'Tequila',qty:0,fill:'low',notes:'Restock',photo:null},
+    {id:8,name:'Angostura Bitters',loc:'Atlas Air',cat:'Bitters',qty:1,fill:'1/2',notes:'',photo:null},
+    {id:9,name:'Simple Syrup',loc:'Ice Cart',cat:'Mixer',qty:2,fill:'full',notes:'Homemade',photo:null},
+    {id:10,name:'Tonic Water',loc:'Ice Cart',cat:'Mixer',qty:3,fill:'3/4',notes:'',photo:null},
+    {id:11,name:'Club Soda',loc:'Ice Cart',cat:'Mixer',qty:2,fill:'full',notes:'',photo:null},
+  ]
+};
+let nextId=Math.max(0,...S.inventory.map(i=>i.id))+1;
+let activeTab='All';
+let editId=null, fillId=null;
+let addPhoto=null, editPhoto=null;
+let syncTimer=null;
+
+/* ── CREDENTIALS ── */
+let jbKey  = localStorage.getItem('hb_jb_key')||'';
+let jbBin  = localStorage.getItem('hb_jb_bin')||'';
+
+/* ── PERSISTENCE ── */
+function saveLocal(){ try{localStorage.setItem('hb_v5',JSON.stringify(S));}catch(e){} }
+function saveAndSync(){ saveLocal(); if(syncTimer)clearTimeout(syncTimer); syncTimer=setTimeout(()=>pushCloud(true),1500); }
+function setSyncDot(state,text){ const d=document.getElementById('sync-dot'),l=document.getElementById('sync-label'); d.className='sync-dot'+(state?' '+state:''); l.textContent=text; }
+
+/* ── JSONBIN API ── */
+async function pushCloud(silent){
+  if(!jbKey||!jbBin){ if(!silent) toast('Set up cloud sync first — tap ☁ Sync'); return; }
+  setSyncDot('busy','Syncing…');
+  try{
+    const r=await fetch(`${JB}/b/${jbBin}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':jbKey},body:JSON.stringify(S)});
+    if(!r.ok) throw new Error(r.status);
+    setSyncDot('ok','Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+    if(!silent) toast('Pushed to cloud ✓');
+  }catch(e){
+    setSyncDot('err','Sync failed');
+    if(!silent) toast('Sync failed — check key & Bin ID in ☁ Sync');
+  }
+}
+async function pullCloud(silent){
+  if(!jbKey||!jbBin){ if(!silent) toast('Set up cloud sync first — tap ☁ Sync'); return; }
+  setSyncDot('busy','Pulling…');
+  try{
+    const r=await fetch(`${JB}/b/${jbBin}/latest`,{headers:{'X-Master-Key':jbKey}});
+    if(!r.ok) throw new Error(r.status);
+    const d=await r.json();
+    const p=d.record;
+    if(p&&p.inventory&&p.locations){ S=p; nextId=Math.max(0,...S.inventory.map(i=>i.id))+1; saveLocal(); render(); setSyncDot('ok','Pulled '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})); if(!silent) toast('Pulled from cloud ✓'); }
+    else throw new Error('bad');
+  }catch(e){ setSyncDot('err','Pull failed'); if(!silent) toast('Pull failed — check key & Bin ID'); }
+}
+async function createBin(){
+  const key=document.getElementById('jb-key').value.trim();
+  if(!key){ toast('Enter your Master Key first'); return; }
+  setSyncDot('busy','Creating…');
+  try{
+    const r=await fetch(`${JB}/b`,{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'home-bar','X-Bin-Private':'true'},body:JSON.stringify(S)});
+    if(!r.ok) throw new Error(r.status);
+    const d=await r.json();
+    jbKey=key; jbBin=d.metadata.id;
+    localStorage.setItem('hb_jb_key',jbKey); localStorage.setItem('hb_jb_bin',jbBin);
+    document.getElementById('jb-key').value=jbKey;
+    document.getElementById('jb-bin').value=jbBin;
+    const hint=document.getElementById('bin-copy-hint');
+    hint.textContent='✓ Bin created! Your Bin ID: '+jbBin+' — copy & save this!';
+    hint.style.display='block';
+    showCloudStatus(true,'Connected · bin created');
+    setSyncDot('ok','Cloud synced');
+    toast('Bin created — copy your Bin ID!');
+  }catch(e){ setSyncDot('err','Failed'); toast('Failed — is your Master Key correct?'); }
+}
+async function connectBin(){
+  const key=document.getElementById('jb-key').value.trim();
+  const bin=document.getElementById('jb-bin').value.trim();
+  if(!key){ toast('Enter your Master Key'); return; }
+  if(!bin){ toast('Enter a Bin ID, or tap Create new bin'); return; }
+  jbKey=key; jbBin=bin;
+  localStorage.setItem('hb_jb_key',jbKey); localStorage.setItem('hb_jb_bin',jbBin);
+  showCloudStatus(true,'Connecting…');
+  await pullCloud(false);
+  showCloudStatus(true,'Connected · '+jbBin.slice(0,8)+'…');
+}
+function saveCloudCreds(){
+  const key=document.getElementById('jb-key').value.trim();
+  if(!key){ toast('Enter your Master Key'); return; }
+  jbKey=key; localStorage.setItem('hb_jb_key',jbKey);
+  toast('Key saved');
+}
+function showCloudStatus(show,text){
+  const row=document.getElementById('sync-status-row');
+  const dot=document.getElementById('cloud-dot');
+  const p=document.getElementById('cloud-status-p');
+  row.style.display=show?'flex':'none';
+  dot.style.background=jbKey&&jbBin?'#2E8B57':'#C17E2A';
+  p.innerHTML=text;
+}
+
+/* ── EXPORT / IMPORT ── */
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='home-bar-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  URL.revokeObjectURL(url); toast('Exported — tap Share → Save to Files → iCloud Drive');
+}
+function importJSON(e){
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const p=JSON.parse(ev.target.result);
+      if(p.inventory&&p.locations){ S=p; nextId=Math.max(0,...S.inventory.map(i=>i.id))+1; saveLocal(); render(); toast('Imported ✓'); }
+      else toast('Invalid backup file');
+    }catch(err){ toast('Could not read file'); }
+  };
+  r.readAsText(file); e.target.value='';
+}
+
+/* ── CLOUD MODAL ── */
+function openCloud(){
+  document.getElementById('jb-key').value=jbKey;
+  document.getElementById('jb-bin').value=jbBin;
+  document.getElementById('bin-copy-hint').style.display='none';
+  if(jbKey&&jbBin) showCloudStatus(true,'Connected · '+jbBin.slice(0,8)+'…');
+  else showCloudStatus(false,'');
+  openModal('cloud-modal');
+}
+
+/* ── RENDER ── */
+function render(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const inv=S.inventory;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${inv.length}</div><div class="stat-label">Bottles</div></div>
+    <div class="stat-card"><div class="stat-num">${inv.filter(i=>i.qty>0).length}</div><div class="stat-label">In stock</div></div>
+    <div class="stat-card"><div class="stat-num">${inv.filter(i=>i.qty===0).length}</div><div class="stat-label">Out</div></div>`;
+
+  document.getElementById('tabs').innerHTML=['All',...S.locations].map(t=>{
+    const n=t==='All'?inv.length:inv.filter(i=>i.loc===t).length;
+    const c=t==='All'?'':lc(t);
+    return `<button class="tab ${activeTab===t?'active':''}" onclick="setTab('${t}')">${t}<span class="tbadge" style="background:${c?c+'18':'rgba(0,0,0,.07)'};color:${c||'#7A746C'}">${n}</span></button>`;
+  }).join('');
+
+  let items=inv.filter(i=>{
+    if(activeTab!=='All'&&i.loc!==activeTab) return false;
+    if(q&&!i.name.toLowerCase().includes(q)&&!i.cat.toLowerCase().includes(q)&&!i.loc.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if(!items.length){ document.getElementById('list').innerHTML='<div class="empty">No bottles found</div>'; return; }
+
+  let html='';
+  if(activeTab==='All'){
+    S.locations.forEach(loc=>{
+      const li=items.filter(i=>i.loc===loc); if(!li.length) return;
+      const c=lc(loc);
+      html+=`<div class="sec-lbl" style="color:${c};border-left:3px solid ${c};padding-left:8px">${loc}</div>`;
+      li.forEach(item=>html+=row(item,false));
+    });
+  } else {
+    [...new Set(items.map(i=>i.cat))].forEach(cat=>{
+      html+=`<div class="sec-lbl">${cat}</div>`;
+      items.filter(i=>i.cat===cat).forEach(item=>html+=row(item,true));
+    });
+  }
+  document.getElementById('list').innerHTML=html;
+}
+
+function row(item,showLoc){
+  const thumb=item.photo?`<img src="${item.photo}" style="width:30px;height:42px;object-fit:cover;border-radius:4px;border:0.5px solid rgba(0,0,0,.1)">`:lbl(item.cat,item.id);
+  return `<div class="item" onclick="openDetail(${item.id})">
+    <div class="lbl-icon">${thumb}</div>
+    <div class="item-info">
+      <div class="iname">${item.name}${item.qty===0?'<span class="badge-out">out</span>':''}</div>
+      <div class="isub">
+        ${showLoc?`<span style="color:${lc(item.loc)};font-weight:500">${item.loc}</span><span>·</span>`:''}
+        <span>${item.cat}</span>
+        ${item.qty>0?`<span>·</span>${fpHtml(item.fill,item.id)}`:''}
+      </div>
+    </div>
+    <div class="qty-ctrl" onclick="event.stopPropagation()">
+      <button class="qbtn" onclick="chg(${item.id},-1)">−</button>
+      <span class="qnum">${item.qty}</span>
+      <button class="qbtn" onclick="chg(${item.id},1)">+</button>
+    </div>
+  </div>`;
+}
+
+function setTab(t){ activeTab=t; render(); }
+function chg(id,d){ const i=S.inventory.find(x=>x.id===id); if(i){i.qty=Math.max(0,i.qty+d);saveAndSync();render();} }
+
+/* ── DETAIL ── */
+function openDetail(id){
+  const item=S.inventory.find(x=>x.id===id); if(!item) return;
+  const f=FILLS[item.fill]||FILLS.full;
+  const dots=Array.from({length:4},(_,i)=>`<span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:${i<f.dots?f.color:'rgba(0,0,0,.12)'}"></span>`).join('');
+  document.getElementById('detail-body').innerHTML=`
+    ${item.photo?`<img src="${item.photo}" class="detail-photo">`:`<div class="detail-ph">No label photo — tap Edit to add one</div>`}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;gap:12px">
+      <div><div style="font-size:19px;font-weight:500">${item.name}</div><div style="font-size:13px;color:${lc(item.loc)};font-weight:500;margin-top:3px">${item.loc}</div></div>
+      <button class="btn-amber" style="padding:7px 14px;font-size:13px;flex-shrink:0" onclick="closeModal('detail-modal');openEdit(${item.id})">Edit</button>
+    </div>
+    <div class="drow"><span class="dl">Category</span><span class="dv">${item.cat}</span></div>
+    <div class="drow"><span class="dl">Quantity</span><span class="dv">${item.qty} bottle${item.qty!==1?'s':''}</span></div>
+    <div class="drow"><span class="dl">Fill level</span><span class="dv"><span style="display:inline-flex;gap:2px">${dots}</span><span style="color:${f.color}">${f.label}</span></span></div>
+    ${item.notes?`<div class="drow"><span class="dl">Notes</span><span class="dv">${item.notes}</span></div>`:''}`;
+  openModal('detail-modal');
+}
+
+/* ── EDIT ── */
+function openEdit(id){
+  editId=id; const item=S.inventory.find(x=>x.id===id);
+  document.getElementById('e-name').value=item.name;
+  document.getElementById('e-qty').value=item.qty;
+  document.getElementById('e-notes').value=item.notes||'';
+  popSel('e-loc',item.loc); document.getElementById('e-cat').value=item.cat;
+  document.querySelectorAll('#e-fp .fo').forEach(b=>b.classList.toggle('sel',b.dataset.fill===item.fill));
+  editPhoto=item.photo||null; setPreview('e',editPhoto);
+  openModal('edit-modal');
+}
+function saveEdit(){
+  const item=S.inventory.find(x=>x.id===editId); if(!item) return;
+  item.name=document.getElementById('e-name').value.trim()||item.name;
+  item.loc=document.getElementById('e-loc').value;
+  item.cat=document.getElementById('e-cat').value;
+  item.qty=parseInt(document.getElementById('e-qty').value)||0;
+  item.notes=document.getElementById('e-notes').value.trim();
+  const sel=document.querySelector('#e-fp .fo.sel'); if(sel) item.fill=sel.dataset.fill;
+  item.photo=editPhoto;
+  saveAndSync(); render(); closeModal('edit-modal');
+}
+function delBottle(){
+  if(!confirm('Remove this bottle?')) return;
+  S.inventory=S.inventory.filter(x=>x.id!==editId);
+  saveAndSync(); render(); closeModal('edit-modal');
+}
+
+/* ── ADD ── */
+function openAdd(){
+  addPhoto=null; setPreview('a',null);
+  document.getElementById('a-name').value='';
+  document.getElementById('a-qty').value=1;
+  document.getElementById('a-notes').value='';
+  popSel('a-loc',activeTab!=='All'?activeTab:S.locations[0]);
+  document.querySelectorAll('#a-fp .fo').forEach(b=>b.classList.toggle('sel',b.dataset.fill==='full'));
+  openModal('add-modal'); setTimeout(()=>document.getElementById('a-name').focus(),80);
+}
+function addBottle(){
+  const name=document.getElementById('a-name').value.trim(); if(!name){document.getElementById('a-name').focus();return;}
+  const sel=document.querySelector('#a-fp .fo.sel');
+  S.inventory.push({id:nextId++,name,loc:document.getElementById('a-loc').value,cat:document.getElementById('a-cat').value,qty:parseInt(document.getElementById('a-qty').value)||1,fill:sel?sel.dataset.fill:'full',notes:document.getElementById('a-notes').value.trim(),photo:addPhoto});
+  saveAndSync(); render(); closeModal('add-modal');
+}
+
+/* ── LOCATIONS ── */
+function openManageLocs(){ renderChips(); document.getElementById('new-loc').value=''; openModal('locs-modal'); }
+function renderChips(){
+  document.getElementById('loc-chips').innerHTML=S.locations.map(loc=>{
+    const c=lc(loc), canDel=!BUILTIN.includes(loc)&&!S.inventory.some(i=>i.loc===loc);
+    return `<span class="loc-chip" style="background:${c}18;color:${c};border-color:${c}40">${loc}${canDel?`<span class="chip-x" onclick="delLoc('${loc}')">×</span>`:''}</span>`;
+  }).join('');
+}
+function addLoc(){
+  const n=document.getElementById('new-loc').value.trim(); if(!n||S.locations.includes(n)) return;
+  S.locations.push(n); saveAndSync(); render(); renderChips(); document.getElementById('new-loc').value='';
+}
+function delLoc(loc){
+  if(S.inventory.some(i=>i.loc===loc)){alert('Move or delete all bottles in this location first.');return;}
+  S.locations=S.locations.filter(l=>l!==loc); if(activeTab===loc) activeTab='All';
+  saveAndSync(); render(); renderChips();
+}
+
+/* ── FILL ── */
+function openFill(id){
+  fillId=id; const item=S.inventory.find(x=>x.id===id);
+  document.getElementById('fill-title').textContent=item.name;
+  document.querySelectorAll('#fill-main .fo').forEach(b=>b.classList.toggle('sel',b.dataset.fill===item.fill));
+  openModal('fill-modal');
+}
+function saveFill(){
+  const sel=document.querySelector('#fill-main .fo.sel');
+  if(sel&&fillId){const item=S.inventory.find(x=>x.id===fillId);if(item){item.fill=sel.dataset.fill;saveAndSync();render();}}
+  closeModal('fill-modal');
+}
+function pf(btn,pid){ document.querySelectorAll('#'+pid+' .fo').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
+
+/* ── PHOTOS ── */
+function setPreview(p,d){
+  const prev=document.getElementById(p+'-pp'), hint=document.getElementById(p+'-ph');
+  if(d){prev.innerHTML=`<img src="${d}" style="width:100%;max-height:160px;object-fit:contain;border-radius:6px">`;hint.textContent='Tap to change';}
+  else{prev.innerHTML='';hint.textContent='Tap to add a photo';}
+}
+function aPhotoTap(){document.getElementById('a-fi').click();}
+function aPhotoCamera(){event.stopPropagation();document.getElementById('a-ci').click();}
+function aPhotoFile(){event.stopPropagation();document.getElementById('a-fi').click();}
+function aClear(){addPhoto=null;setPreview('a',null);}
+function aFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{addPhoto=ev.target.result;setPreview('a',addPhoto);};r.readAsDataURL(f);}
+function ePhotoTap(){document.getElementById('e-fi').click();}
+function ePhotoCamera(){event.stopPropagation();document.getElementById('e-ci').click();}
+function ePhotoFile(){event.stopPropagation();document.getElementById('e-fi').click();}
+function eClear(){editPhoto=null;setPreview('e',null);}
+function eFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{editPhoto=ev.target.result;setPreview('e',editPhoto);};r.readAsDataURL(f);}
+
+/* ── COCKTAILS ── */
+async function openCocktails(){
+  const inStock=S.inventory.filter(i=>i.qty>0).map(i=>i.name);
+  if(inStock.length<2){alert('Add at least 2 bottles to get suggestions.');return;}
+  document.getElementById('ckt-result').innerHTML='<div class="dot-pulse"><span></span><span></span><span></span></div>';
+  openModal('ckt-modal');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`My bar has: ${inStock.join(', ')}. Suggest 5 cocktails I can make. Cocktail name on its own line, then key ingredients + 1-sentence method.`}]})});
+    const d=await res.json();
+    document.getElementById('ckt-result').textContent=d.content?.filter(b=>b.type==='text').map(b=>b.text).join('')||'No suggestions.';
+  }catch(e){document.getElementById('ckt-result').textContent='Could not reach AI service. Check your connection.';}
+}
+
+/* ── UTILS ── */
+function popSel(id,sel){ document.getElementById(id).innerHTML=S.locations.map(l=>`<option value="${l}"${l===sel?' selected':''}>${l}</option>`).join(''); }
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function bgClick(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+/* ── INIT ── */
+if(jbKey&&jbBin){ setSyncDot('busy','Syncing…'); pullCloud(true).then(()=>render()); }
+else { setSyncDot('','Local only — tap ☁ Sync to connect'); render(); }
+</script>
+</body>
+</html>
