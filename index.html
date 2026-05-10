@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #FAF8F3; --surface: #FFFFFF; --border: rgba(0,0,0,0.1);
+  --border-strong: rgba(0,0,0,0.18); --text: #1A1714; --muted: #7A746C;
+  --accent: #2E1A0E; --amber: #C17E2A; --amber-light: #FDF3E3;
+  --amber-dark: #7A4F0F; --red: #B94040; --red-light: #FDF0EF;
+  --green: #2E8B57; --green-light: #EEF6EE;
+  --radius: 12px; --radius-sm: 8px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; }
+
+.site-header { background: var(--accent); color: #FAF8F3; padding: 1.75rem 1.25rem 1.25rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+.site-header h1 { font-family: 'DM Serif Display', serif; font-size: 30px; font-weight: 400; }
+.hdr-sub { font-size: 11px; opacity: 0.5; margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #FAF8F3; opacity: 0.4; flex-shrink: 0; }
+.sync-dot.ok { background: #5DCAA5; opacity: 1; }
+.sync-dot.err { background: #F0997B; opacity: 1; }
+.sync-dot.busy { background: #FAC775; opacity: 1; animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+.hdr-btns { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.btn-amber { background: var(--amber); color: #fff; border: none; border-radius: var(--radius-sm); padding: 8px 14px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+.btn-amber:hover { background: var(--amber-dark); }
+.btn-outline-light { background: rgba(255,255,255,0.12); color: #FAF8F3; border: 0.5px solid rgba(255,255,255,0.28); border-radius: var(--radius-sm); padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.btn-outline-light:hover { background: rgba(255,255,255,0.22); }
+
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 1.1rem 1.25rem 0; }
+.stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; text-align: center; }
+.stat-num { font-size: 22px; font-weight: 500; font-family: 'DM Serif Display', serif; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.controls { padding: 0.875rem 1.25rem 0.4rem; }
+.search-wrap { position: relative; }
+.search-wrap input { width: 100%; padding: 9px 12px 9px 32px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--surface); color: var(--text); outline: none; }
+.search-wrap input:focus { border-color: var(--amber); }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+.tabs-outer { overflow-x: auto; scrollbar-width: none; border-bottom: 0.5px solid var(--border); margin-top: 0.5rem; }
+.tabs-outer::-webkit-scrollbar { display: none; }
+.tabs-inner { display: flex; padding: 0 1.25rem; width: max-content; }
+.tab { flex-shrink: 0; font-size: 13px; padding: 9px 13px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: color 0.15s; }
+.tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--accent); }
+.tab:hover:not(.active) { color: var(--text); }
+.tab-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 100px; margin-left: 4px; font-weight: 400; }
+
+.inventory { padding: 0 1.25rem; }
+.sec-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0.75rem 0 0.4rem; }
+
+.item { display: flex; align-items: center; gap: 11px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+.item:hover { border-color: var(--border-strong); }
+.lbl-icon { flex-shrink: 0; width: 30px; height: 42px; }
+.lbl-icon img { width: 30px; height: 42px; object-fit: cover; border-radius: 4px; border: 0.5px solid var(--border); }
+.item-info { flex: 1; min-width: 0; }
+.item-name { font-size: 14px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.badge-out { font-size: 10px; padding: 2px 6px; border-radius: 100px; background: var(--red-light); color: var(--red); font-weight: 500; }
+.fill-pill { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 7px 2px 4px; border-radius: 100px; font-weight: 500; border: none; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+.fill-pill:hover { opacity: 0.75; }
+.fdots { display: inline-flex; gap: 2px; align-items: center; }
+.fdot { width: 5px; height: 5px; border-radius: 50%; }
+.qty-ctrl { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.qty-btn { width: 27px; height: 27px; border-radius: 50%; border: 0.5px solid var(--border-strong); background: var(--bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: background 0.1s; font-family: inherit; }
+.qty-btn:hover { background: var(--amber-light); border-color: var(--amber); }
+.qty-num { font-size: 14px; font-weight: 500; min-width: 18px; text-align: center; }
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: 14px; }
+
+.cocktail-wrap { padding: 0.25rem 1.25rem 0; }
+.cocktail-btn { width: 100%; background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 12px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, border-color 0.15s; }
+.cocktail-btn:hover { background: var(--amber-light); border-color: var(--amber); }
+
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(20,14,8,0.52); z-index: 100; align-items: flex-end; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 1.4rem; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; }
+.modal-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 1.25rem; }
+.modal h2 { font-family: 'DM Serif Display', serif; font-size: 21px; font-weight: 400; margin-bottom: 1.1rem; }
+.field { margin-bottom: 0.8rem; }
+.field label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 4px; }
+.field input, .field select, .field textarea { width: 100%; padding: 9px 11px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--bg); color: var(--text); outline: none; appearance: none; }
+.field input:focus, .field select:focus { border-color: var(--amber); background: #fff; }
+.field-note { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+.fill-picker { display: flex; gap: 5px; flex-wrap: wrap; }
+.fill-opt { flex: 1; min-width: 58px; padding: 7px 4px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; background: var(--surface); font-family: inherit; font-size: 11px; text-align: center; color: var(--text); transition: all 0.15s; }
+.fill-opt.selected { border-color: var(--accent); background: var(--amber-light); font-weight: 500; color: var(--accent); }
+.fill-opt-dots { display: flex; justify-content: center; gap: 2px; margin-bottom: 3px; }
+.fill-opt-dots span { width: 5px; height: 5px; border-radius: 50%; }
+
+.photo-area { border: 1.5px dashed var(--border-strong); border-radius: var(--radius-sm); padding: 0.875rem; text-align: center; cursor: pointer; background: var(--bg); transition: border-color 0.15s; margin-bottom: 6px; }
+.photo-area:hover { border-color: var(--amber); }
+.photo-area p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.photo-area img { width: 100%; max-height: 160px; object-fit: contain; border-radius: 6px; }
+.photo-btns { display: flex; gap: 6px; margin-bottom: 0.5rem; }
+.photo-btns button { flex: 1; padding: 7px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; background: var(--surface); color: var(--text); font-family: inherit; }
+.photo-btns button:hover { background: var(--bg); }
+
+.modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
+.btn-cancel { flex: 1; padding: 11px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); background: transparent; font-family: inherit; font-size: 14px; cursor: pointer; color: var(--muted); }
+.btn-save { flex: 2; padding: 11px; border: none; border-radius: var(--radius-sm); background: var(--accent); color: #FAF8F3; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+.btn-save:hover { background: #3D2416; }
+.btn-danger { flex: 1; padding: 11px; border: 0.5px solid var(--red); border-radius: var(--radius-sm); background: transparent; font-family: inherit; font-size: 14px; cursor: pointer; color: var(--red); }
+.btn-green { flex: 2; padding: 11px; border: none; border-radius: var(--radius-sm); background: var(--green); color: #fff; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.btn-green:hover { background: #236b43; }
+
+.detail-photo { width: 100%; max-height: 220px; object-fit: contain; border-radius: var(--radius-sm); margin-bottom: 1rem; border: 0.5px solid var(--border); }
+.detail-placeholder { width: 100%; height: 100px; border-radius: var(--radius-sm); margin-bottom: 1rem; border: 0.5px solid var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; }
+.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid rgba(0,0,0,0.07); }
+.detail-row:last-child { border-bottom: none; }
+.detail-row .dl { font-size: 12px; color: var(--muted); }
+.detail-row .dv { font-size: 13px; font-weight: 500; color: var(--text); text-align: right; display: flex; align-items: center; gap: 5px; }
+
+.loc-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 0.5rem; }
+.loc-chip { font-size: 12px; padding: 4px 10px; border-radius: 100px; border: 0.5px solid; display: inline-flex; align-items: center; gap: 4px; }
+.loc-chip-x { cursor: pointer; font-size: 14px; line-height: 1; margin-left: 2px; }
+.loc-chip-x:hover { opacity: 0.6; }
+
+.cloud-section { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; }
+.cloud-section h3 { font-size: 13px; font-weight: 500; margin-bottom: 0.5rem; color: var(--text); }
+.cloud-status { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.cloud-status .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+.export-row { display: flex; gap: 8px; }
+.export-row button { flex: 1; padding: 9px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; font-family: inherit; background: var(--surface); color: var(--text); }
+.export-row button:hover { background: var(--bg); }
+
+.cocktail-result { font-size: 14px; color: var(--text); line-height: 1.75; white-space: pre-wrap; min-height: 80px; }
+.dot-pulse { display: flex; gap: 4px; align-items: center; }
+.dot-pulse span { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: dpulse 1.2s ease-in-out infinite; }
+.dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+.dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dpulse { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: var(--accent); color: #FAF8F3; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 500; z-index: 200; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <h1>Home Bar</h1>
+    <div class="hdr-sub">
+      <span class="sync-dot" id="sync-dot"></span>
+      <span id="sync-status">Loading…</span>
+    </div>
+  </div>
+  <div class="hdr-btns">
+    <button class="btn-outline-light" onclick="openCloud()">☁ Sync</button>
+    <button class="btn-outline-light" onclick="openManageLocations()">+ Location</button>
+    <button class="btn-amber" onclick="openAdd()">+ Bottle</button>
+  </div>
+</header>
+
+<div class="stats-row" id="stats"></div>
+<div class="controls"><div class="search-wrap"><span class="search-icon">⌕</span><input type="text" id="search" placeholder="Search all locations…" oninput="render()"></div></div>
+<div class="tabs-outer"><div class="tabs-inner" id="tabs"></div></div>
+<div class="inventory" id="inventory"></div>
+<div class="cocktail-wrap"><button class="cocktail-btn" onclick="openCocktails()">✦ What can I make tonight?</button></div>
+<div class="toast" id="toast"></div>
+
+<!-- Cloud sync modal -->
+<div class="modal-bg" id="cloud-modal" onclick="bgClick(event,'cloud-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Cloud sync & backup</h2>
+
+    <div class="cloud-section">
+      <h3>☁ Auto-sync (JSONBin)</h3>
+      <p class="field-note" style="margin-bottom:0.75rem">Your inventory syncs automatically to a private cloud bin. Paste your Bin ID on any device to stay in sync.</p>
+      <div class="field" style="margin-bottom:0.5rem">
+        <label>Bin ID</label>
+        <input type="text" id="bin-id-input" placeholder="e.g. 64f3a2b1e41b4f5c3d2e1a0b">
+      </div>
+      <div class="cloud-status" id="cloud-status-row">
+        <span class="dot" id="cloud-dot" style="background:var(--muted)"></span>
+        <span id="cloud-status-text">No bin connected</span>
+      </div>
+      <div class="modal-actions" style="margin-top:0.75rem">
+        <button class="btn-cancel" onclick="createNewBin()" style="flex:1;font-size:13px">Create new bin</button>
+        <button class="btn-green" onclick="connectBin()" style="flex:1;padding:10px">Connect bin</button>
+      </div>
+      <div class="modal-actions" style="margin-top:0.5rem">
+        <button class="btn-save" style="flex:1;padding:10px;font-size:13px" onclick="pushToCloud()">Push to cloud ↑</button>
+        <button class="btn-cancel" style="flex:1;font-size:13px" onclick="pullFromCloud()">Pull from cloud ↓</button>
+      </div>
+    </div>
+
+    <div class="cloud-section">
+      <h3>💾 Manual backup</h3>
+      <p class="field-note" style="margin-bottom:0.75rem">Export your inventory as a JSON file and save it anywhere — iCloud Drive, Files, email. Import it to restore.</p>
+      <div class="export-row">
+        <button onclick="exportJSON()">Export JSON</button>
+        <button onclick="document.getElementById('import-input').click()">Import JSON</button>
+      </div>
+      <input type="file" id="import-input" accept=".json,application/json" style="display:none" onchange="importJSON(event)">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-save" style="flex:1" onclick="closeModal('cloud-modal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="modal-bg" id="detail-modal" onclick="bgClick(event,'detail-modal')">
+  <div class="modal"><div class="modal-handle"></div><div id="detail-body"></div></div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-bg" id="edit-modal" onclick="bgClick(event,'edit-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Edit bottle</h2>
+    <div class="field"><label>Name</label><input type="text" id="e-name"></div>
+    <div class="field"><label>Location</label><select id="e-loc"></select></div>
+    <div class="field"><label>Category</label>
+      <select id="e-cat">
+        <option>Whiskey</option><option>Bourbon</option><option>Scotch</option><option>Gin</option><option>Vodka</option><option>Rum</option><option>Tequila</option><option>Mezcal</option><option>Brandy</option><option>Liqueur</option><option>Wine</option><option>Beer</option><option>Vermouth</option><option>Bitters</option><option>Mixer</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Quantity</label><input type="number" id="e-qty" min="0" max="99"></div>
+    <div class="field"><label>Fill level</label>
+      <div class="fill-picker" id="e-fill-picker">
+        <button class="fill-opt" data-fill="full" onclick="pickFill(this,'e-fill-picker')"><div class="fill-opt-dots"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full</button>
+        <button class="fill-opt" data-fill="3/4" onclick="pickFill(this,'e-fill-picker')"><div class="fill-opt-dots"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,0.12)"></span></div>¾</button>
+        <button class="fill-opt" data-fill="1/2" onclick="pickFill(this,'e-fill-picker')"><div class="fill-opt-dots"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Half</button>
+        <button class="fill-opt" data-fill="low" onclick="pickFill(this,'e-fill-picker')"><div class="fill-opt-dots"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Almost empty</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Label photo</label>
+      <div class="photo-area" id="e-photo-area" onclick="ePhotoTap()"><div id="e-photo-preview"></div><p id="e-photo-hint">Tap to add a photo</p></div>
+      <div class="photo-btns">
+        <button onclick="ePhotoCamera()">📷 Camera</button>
+        <button onclick="ePhotoFile()">📁 Upload</button>
+        <button onclick="eClearPhoto()" style="color:var(--red)">Remove</button>
+      </div>
+      <input type="file" id="e-file-input" accept="image/*" style="display:none" onchange="eHandleFile(event)">
+      <input type="file" id="e-camera-input" accept="image/*" capture="environment" style="display:none" onchange="eHandleFile(event)">
+    </div>
+    <div class="field"><label>Notes</label><input type="text" id="e-notes" placeholder="e.g. 750ml, gift…"></div>
+    <div class="modal-actions">
+      <button class="btn-danger" onclick="deleteBottle()">Delete</button>
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add modal -->
+<div class="modal-bg" id="add-modal" onclick="bgClick(event,'add-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Add a bottle</h2>
+    <div class="field"><label>Bottle name</label><input type="text" id="a-name" placeholder="e.g. Bulleit Rye"></div>
+    <div class="field"><label>Location</label><select id="a-loc"></select></div>
+    <div class="field"><label>Category</label>
+      <select id="a-cat">
+        <option>Whiskey</option><option>Bourbon</option><option>Scotch</option><option>Gin</option><option>Vodka</option><option>Rum</option><option>Tequila</option><option>Mezcal</option><option>Brandy</option><option>Liqueur</option><option>Wine</option><option>Beer</option><option>Vermouth</option><option>Bitters</option><option>Mixer</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Quantity</label><input type="number" id="a-qty" value="1" min="0" max="99"></div>
+    <div class="field"><label>Fill level</label>
+      <div class="fill-picker" id="a-fill-picker">
+        <button class="fill-opt selected" data-fill="full" onclick="pickFill(this,'a-fill-picker')"><div class="fill-opt-dots"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full</button>
+        <button class="fill-opt" data-fill="3/4" onclick="pickFill(this,'a-fill-picker')"><div class="fill-opt-dots"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,0.12)"></span></div>¾</button>
+        <button class="fill-opt" data-fill="1/2" onclick="pickFill(this,'a-fill-picker')"><div class="fill-opt-dots"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Half</button>
+        <button class="fill-opt" data-fill="low" onclick="pickFill(this,'a-fill-picker')"><div class="fill-opt-dots"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Almost empty</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Label photo (optional)</label>
+      <div class="photo-area" id="a-photo-area" onclick="aPhotoTap()"><div id="a-photo-preview"></div><p id="a-photo-hint">Tap to add a photo</p></div>
+      <div class="photo-btns">
+        <button onclick="aPhotoCamera()">📷 Camera</button>
+        <button onclick="aPhotoFile()">📁 Upload</button>
+        <button onclick="aClearPhoto()" style="color:var(--red)">Remove</button>
+      </div>
+      <input type="file" id="a-file-input" accept="image/*" style="display:none" onchange="aHandleFile(event)">
+      <input type="file" id="a-camera-input" accept="image/*" capture="environment" style="display:none" onchange="aHandleFile(event)">
+    </div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="a-notes" placeholder="e.g. 750ml, gift…"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn-save" onclick="addBottle()">Add bottle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage locations modal -->
+<div class="modal-bg" id="locs-modal" onclick="bgClick(event,'locs-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Manage locations</h2>
+    <div class="field">
+      <label>Add new location</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="new-loc-input" placeholder="e.g. Patio Bar" style="flex:1">
+        <button class="btn-save" style="flex:0;padding:9px 16px;flex-shrink:0" onclick="addLocation()">Add</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>All locations</label>
+      <div class="loc-chips" id="loc-chips"></div>
+      <p class="field-note" style="margin-top:8px">Built-in locations can't be deleted. Custom locations can only be deleted when empty.</p>
+    </div>
+    <div class="modal-actions"><button class="btn-save" style="flex:1" onclick="closeModal('locs-modal')">Done</button></div>
+  </div>
+</div>
+
+<!-- Fill-only modal -->
+<div class="modal-bg" id="fill-modal" onclick="bgClick(event,'fill-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="fill-modal-title">Update fill level</h2>
+    <div class="fill-picker" id="fill-picker-main">
+      <button class="fill-opt" data-fill="full" onclick="pickFill(this,'fill-picker-main')"><div class="fill-opt-dots"><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span><span style="background:#2E8B57"></span></div>Full</button>
+      <button class="fill-opt" data-fill="3/4" onclick="pickFill(this,'fill-picker-main')"><div class="fill-opt-dots"><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:#5B8AC4"></span><span style="background:rgba(0,0,0,0.12)"></span></div>¾</button>
+      <button class="fill-opt" data-fill="1/2" onclick="pickFill(this,'fill-picker-main')"><div class="fill-opt-dots"><span style="background:#C17E2A"></span><span style="background:#C17E2A"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Half</button>
+      <button class="fill-opt" data-fill="low" onclick="pickFill(this,'fill-picker-main')"><div class="fill-opt-dots"><span style="background:#B94040"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span><span style="background:rgba(0,0,0,0.12)"></span></div>Almost empty</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('fill-modal')">Cancel</button>
+      <button class="btn-save" onclick="saveFillOnly()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cocktail modal -->
+<div class="modal-bg" id="cocktail-modal" onclick="bgClick(event,'cocktail-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Tonight's options</h2>
+    <div class="cocktail-result" id="cocktail-result"></div>
+    <div class="modal-actions"><button class="btn-save" style="flex:1" onclick="closeModal('cocktail-modal')">Done</button></div>
+  </div>
+</div>
+
+<script>
+const BUILTIN_LOCS = ['Air Maroc','Atlas Air','Ice Cart','Downstairs Bar','Garage'];
+const LOC_COLORS_DEFAULT = {'Air Maroc':'#7F77DD','Atlas Air':'#1D9E75','Ice Cart':'#378ADD','Downstairs Bar':'#C17E2A','Garage':'#7A746C'};
+const PALETTE = ['#7F77DD','#1D9E75','#378ADD','#C17E2A','#7A746C','#C41E3A','#2E8B57','#8E44AD','#A08040','#5B8AC4'];
+const FILLS = {
+  'full':{label:'Full',dots:4,color:'#2E8B57',bg:'#EEF6EE'},
+  '3/4':{label:'¾ full',dots:3,color:'#5B8AC4',bg:'#EAF1FA'},
+  '1/2':{label:'Half',dots:2,color:'#C17E2A',bg:'#FDF3E3'},
+  'low':{label:'Almost empty',dots:1,color:'#B94040',bg:'#FDF0EF'}
+};
+const JSONBIN_KEY = '$2a$10$8qJ7kL3mN9pR2sT4uV6wX.yZ1aB3cD5eF7gH9iJ0kL2mN4oP6qR8s';
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+
+const LABELS = {
+  Bourbon:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="bc${id}"><rect x="7" y="5" width="18" height="34" rx="3"/></clipPath></defs><rect x="7" y="5" width="18" height="34" rx="3" fill="#7B3F00"/><rect x="7" y="5" width="18" height="34" rx="3" fill="none" stroke="#C17E2A" stroke-width="0.8"/><rect x="9" y="7" width="14" height="30" rx="2" fill="#8B4513" clip-path="url(#bc${id})"/><rect x="11" y="9" width="10" height="13" rx="1" fill="#C17E2A" opacity="0.9"/><text x="16" y="17" text-anchor="middle" font-size="4.5" font-weight="700" fill="#3B1A00" font-family="serif">BOURBON</text><text x="16" y="20.5" text-anchor="middle" font-size="3" fill="#5C2800" font-family="serif">STRAIGHT</text><line x1="11" y1="23" x2="21" y2="23" stroke="#C17E2A" stroke-width="0.5"/><text x="16" y="27" text-anchor="middle" font-size="3.5" fill="#C17E2A" font-family="serif">WHISKEY</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#8B4513" stroke="#C17E2A" stroke-width="0.5"/></svg>`,
+  Whiskey:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="3" fill="#2C1810"/><rect x="8" y="5" width="16" height="33" rx="3" fill="none" stroke="#8B6914" stroke-width="0.8"/><rect x="10" y="8" width="12" height="27" rx="1.5" fill="#1A0E08"/><rect x="11" y="10" width="10" height="11" rx="1" fill="#8B6914" opacity="0.85"/><text x="16" y="17" text-anchor="middle" font-size="4" font-weight="700" fill="#C8A840" font-family="serif">IRISH</text><text x="16" y="20" text-anchor="middle" font-size="3" fill="#8B6914" font-family="serif">WHISKEY</text><line x1="11" y1="22.5" x2="21" y2="22.5" stroke="#8B6914" stroke-width="0.4"/><text x="16" y="26" text-anchor="middle" font-size="3" fill="#8B6914" font-family="serif">EST. 1780</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#2C1810" stroke="#8B6914" stroke-width="0.5"/></svg>`,
+  Scotch:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="2" fill="#1C1C2E"/><rect x="8" y="5" width="16" height="33" rx="2" fill="none" stroke="#C0A060" stroke-width="0.8"/><rect x="10" y="8" width="12" height="27" rx="1" fill="#14142A"/><rect x="11" y="9" width="10" height="14" rx="1" fill="#2A2A4A" stroke="#C0A060" stroke-width="0.4"/><text x="16" y="14" text-anchor="middle" font-size="4" font-weight="700" fill="#C0A060" font-family="serif">SCOTCH</text><text x="16" y="17.5" text-anchor="middle" font-size="3" fill="#9080A0" font-family="serif">SINGLE MALT</text><line x1="11" y1="24" x2="21" y2="24" stroke="#C0A060" stroke-width="0.4"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#C0A060" font-family="serif">HIGHLANDS</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#1C1C2E" stroke="#C0A060" stroke-width="0.5"/></svg>`,
+  Gin:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="6" width="18" height="32" rx="9" fill="#E8F4F0"/><rect x="7" y="6" width="18" height="32" rx="9" fill="none" stroke="#2E8B57" stroke-width="0.8"/><rect x="9" y="8" width="14" height="28" rx="7" fill="#D0EDE4"/><text x="16" y="17" text-anchor="middle" font-size="5" font-weight="700" fill="#1A5C38" font-family="serif">GIN</text><line x1="10" y1="22" x2="22" y2="22" stroke="#2E8B57" stroke-width="0.5"/><text x="16" y="26" text-anchor="middle" font-size="3" fill="#2E8B57" font-family="sans-serif">LONDON DRY</text><text x="16" y="30" text-anchor="middle" font-size="2.8" fill="#4A9970" font-family="sans-serif">DISTILLED</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#2E8B57"/></svg>`,
+  Vodka:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="2" fill="#F0F4F8"/><rect x="9" y="5" width="14" height="34" rx="2" fill="none" stroke="#7090B0" stroke-width="0.7"/><rect x="11" y="7" width="10" height="30" rx="1.5" fill="#E8EEF4"/><rect x="11" y="11" width="10" height="11" rx="1" fill="#1A3A5C"/><text x="16" y="18" text-anchor="middle" font-size="5" font-weight="700" fill="#E8EEF4" font-family="sans-serif">V</text><line x1="11" y1="23" x2="21" y2="23" stroke="#7090B0" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="3.5" fill="#1A3A5C" font-family="sans-serif">VODKA</text><text x="16" y="31" text-anchor="middle" font-size="2.8" fill="#7090B0" font-family="sans-serif">TRIPLE DISTILLED</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#1A3A5C"/></svg>`,
+  Rum:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="6" width="18" height="32" rx="3" fill="#8B1A1A"/><rect x="7" y="6" width="18" height="32" rx="3" fill="none" stroke="#D4A017" stroke-width="0.8"/><rect x="9" y="8" width="14" height="28" rx="2" fill="#6B1010"/><rect x="10" y="10" width="12" height="14" rx="1.5" fill="none" stroke="#D4A017" stroke-width="0.5"/><text x="16" y="16" text-anchor="middle" font-size="5.5" font-weight="700" fill="#D4A017" font-family="serif">RUM</text><text x="16" y="20" text-anchor="middle" font-size="3" fill="#E8C060" font-family="serif">DARK</text><line x1="10" y1="25" x2="22" y2="25" stroke="#D4A017" stroke-width="0.5"/><text x="16" y="29" text-anchor="middle" font-size="3" fill="#D4A017" font-family="serif">CARIBBEAN</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#8B1A1A" stroke="#D4A017" stroke-width="0.5"/></svg>`,
+  Tequila:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="34" rx="3" fill="#F5F0D8"/><rect x="8" y="5" width="16" height="34" rx="3" fill="none" stroke="#4A7A2A" stroke-width="0.8"/><rect x="10" y="7" width="12" height="30" rx="2" fill="#EEE8C8"/><text x="16" y="15" text-anchor="middle" font-size="4" font-weight="700" fill="#2E5010" font-family="serif">100%</text><text x="16" y="19.5" text-anchor="middle" font-size="3.2" fill="#2E5010" font-family="serif">AGAVE</text><line x1="10" y1="24" x2="22" y2="24" stroke="#4A7A2A" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3.5" fill="#4A7A2A" font-family="serif">TEQUILA</text><text x="16" y="32" text-anchor="middle" font-size="2.8" fill="#6A9A4A" font-family="serif">BLANCO</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4A7A2A"/></svg>`,
+  Mezcal:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="6" width="16" height="32" rx="2" fill="#2C2010"/><rect x="8" y="6" width="16" height="32" rx="2" fill="none" stroke="#A08040" stroke-width="0.8"/><rect x="10" y="8" width="12" height="28" rx="1.5" fill="#1C1408"/><text x="16" y="15.5" text-anchor="middle" font-size="4" font-weight="700" fill="#D0A040" font-family="serif">MEZCAL</text><text x="16" y="19.5" text-anchor="middle" font-size="3" fill="#A08040" font-family="serif">ARTISANAL</text><line x1="11" y1="24" x2="21" y2="24" stroke="#A08040" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#A08040" font-family="serif">OAXACA</text><rect x="13" y="3" width="6" height="4" rx="1" fill="#2C2010" stroke="#A08040" stroke-width="0.5"/></svg>`,
+  Liqueur:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="5" width="18" height="33" rx="9" fill="#C41E3A"/><rect x="7" y="5" width="18" height="33" rx="9" fill="none" stroke="#FF6B8A" stroke-width="0.7"/><rect x="9" y="7" width="14" height="29" rx="7" fill="#A01830"/><text x="16" y="17" text-anchor="middle" font-size="4.5" font-weight="700" fill="#FFD0D8" font-family="serif">BITTER</text><line x1="10" y1="19.5" x2="22" y2="19.5" stroke="#FF6B8A" stroke-width="0.5"/><text x="16" y="24" text-anchor="middle" font-size="3" fill="#FFD0D8" font-family="serif">APERITIVO</text><text x="16" y="28" text-anchor="middle" font-size="2.8" fill="#FF8AAA" font-family="serif">25% ALC/VOL</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#C41E3A" stroke="#FF6B8A" stroke-width="0.5"/></svg>`,
+  Vermouth:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="33" rx="3" fill="#4A0E0E"/><rect x="8" y="5" width="16" height="33" rx="3" fill="none" stroke="#C08040" stroke-width="0.8"/><rect x="10" y="7" width="12" height="29" rx="2" fill="#380A0A"/><text x="16" y="14.5" text-anchor="middle" font-size="3.5" font-weight="700" fill="#C08040" font-family="serif">SWEET</text><text x="16" y="18.5" text-anchor="middle" font-size="4" font-weight="700" fill="#D09050" font-family="serif">VERMOUTH</text><line x1="11" y1="24" x2="21" y2="24" stroke="#C08040" stroke-width="0.5"/><text x="16" y="28" text-anchor="middle" font-size="3" fill="#C08040" font-family="serif">ROSSO</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4A0E0E" stroke="#C08040" stroke-width="0.5"/></svg>`,
+  Bitters:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="4" width="12" height="36" rx="2" fill="#1A0A00"/><rect x="10" y="4" width="12" height="36" rx="2" fill="none" stroke="#CC4400" stroke-width="0.8"/><rect x="11" y="6" width="10" height="32" rx="1.5" fill="#110600"/><text x="16" y="14" text-anchor="middle" font-size="3.2" font-weight="700" fill="#FF6622" font-family="sans-serif">AROMATIC</text><text x="16" y="18" text-anchor="middle" font-size="4.5" font-weight="700" fill="#FF6622" font-family="serif">BITTERS</text><line x1="11" y1="26" x2="21" y2="26" stroke="#CC4400" stroke-width="0.5"/><text x="16" y="30" text-anchor="middle" font-size="3" fill="#CC4400" font-family="sans-serif">ANGOSTURA</text><rect x="14" y="1" width="4" height="4" rx="1" fill="#CC4400"/></svg>`,
+  Wine:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="2" width="8" height="6" rx="1" fill="#4A1020"/><rect x="10" y="7" width="12" height="32" rx="6" fill="#6B1830"/><rect x="10" y="7" width="12" height="32" rx="6" fill="none" stroke="#9B3858" stroke-width="0.7"/><rect x="12" y="9" width="8" height="28" rx="4" fill="#551428"/><text x="16" y="21" text-anchor="middle" font-size="3.5" font-weight="700" fill="#F0C8D0" font-family="serif">VIN</text><line x1="12" y1="23" x2="20" y2="23" stroke="#9B3858" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="2.8" fill="#D08090" font-family="serif">ROUGE</text></svg>`,
+  Brandy:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="14" width="18" height="24" rx="3" fill="#6B2E00"/><rect x="7" y="14" width="18" height="24" rx="3" fill="none" stroke="#C87820" stroke-width="0.8"/><ellipse cx="16" cy="14" rx="9" ry="5" fill="#7A3500"/><ellipse cx="16" cy="14" rx="9" ry="5" fill="none" stroke="#C87820" stroke-width="0.8"/><rect x="14" y="4" width="4" height="11" rx="1" fill="#5A2800"/><rect x="9" y="17" width="14" height="18" rx="2" fill="#581E00"/><text x="16" y="24" text-anchor="middle" font-size="3.5" font-weight="700" fill="#C87820" font-family="serif">BRANDY</text><text x="16" y="28" text-anchor="middle" font-size="3" fill="#A06010" font-family="serif">V.S.O.P.</text></svg>`,
+  Mixer:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="5" width="16" height="34" rx="3" fill="#E8F4FF"/><rect x="8" y="5" width="16" height="34" rx="3" fill="none" stroke="#4090C0" stroke-width="0.7"/><rect x="10" y="7" width="12" height="30" rx="2" fill="#D8ECFA"/><circle cx="16" cy="15" r="5" fill="#4090C0" opacity="0.15"/><circle cx="16" cy="15" r="3" fill="none" stroke="#4090C0" stroke-width="0.6"/><circle cx="16" cy="15" r="1" fill="#4090C0"/><text x="16" y="24" text-anchor="middle" font-size="3.5" font-weight="500" fill="#1A5080" font-family="sans-serif">MIXER</text><line x1="10" y1="26" x2="22" y2="26" stroke="#4090C0" stroke-width="0.4"/><text x="16" y="30" text-anchor="middle" font-size="3" fill="#4090C0" font-family="sans-serif">TONIC</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#4090C0"/></svg>`,
+  Beer:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="3" fill="#C87820"/><rect x="9" y="5" width="14" height="34" rx="3" fill="none" stroke="#E8A030" stroke-width="0.7"/><rect x="11" y="7" width="10" height="30" rx="2" fill="#A06010"/><rect x="11" y="7" width="10" height="7" rx="2" fill="#F0E8D0"/><text x="16" y="20" text-anchor="middle" font-size="4.5" font-weight="700" fill="#F0D060" font-family="serif">ALE</text><line x1="11" y1="22.5" x2="21" y2="22.5" stroke="#E8A030" stroke-width="0.4"/><text x="16" y="27" text-anchor="middle" font-size="3" fill="#E8A030" font-family="serif">CRAFT BREW</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#C87820" stroke="#E8A030" stroke-width="0.5"/></svg>`,
+  Other:(id)=>`<svg width="30" height="42" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="5" width="14" height="34" rx="3" fill="#404040"/><rect x="9" y="5" width="14" height="34" rx="3" fill="none" stroke="#808080" stroke-width="0.7"/><rect x="11" y="8" width="10" height="28" rx="2" fill="#303030"/><text x="16" y="20" text-anchor="middle" font-size="5" font-weight="700" fill="#B0B0B0" font-family="serif">?</text><rect x="13" y="2" width="6" height="4" rx="1" fill="#505050" stroke="#808080" stroke-width="0.5"/></svg>`
+};
+
+function getLabel(cat, id) { return (LABELS[cat] || LABELS['Other'])(id); }
+function locColor(loc) { return LOC_COLORS_DEFAULT[loc] || PALETTE[store.locations.indexOf(loc) % PALETTE.length] || '#7A746C'; }
+
+function fillPillHtml(fill, id) {
+  const f = FILLS[fill] || FILLS['full'];
+  const dots = Array.from({length:4}, (_,i) => `<span class="fdot" style="background:${i<f.dots?f.color:'rgba(0,0,0,0.12)'}"></span>`).join('');
+  return `<button class="fill-pill" style="background:${f.bg};color:${f.color}" onclick="event.stopPropagation();openFillOnly(${id})"><span class="fdots">${dots}</span>${f.label}</button>`;
+}
+
+let store;
+try { store = JSON.parse(localStorage.getItem('hb_v5') || 'null'); } catch(e) {}
+if (!store) store = {
+  locations: ['Air Maroc','Atlas Air','Ice Cart','Downstairs Bar','Garage'],
+  inventory: [
+    {id:1,name:'Bulleit Bourbon',loc:'Air Maroc',cat:'Bourbon',qty:1,fill:'full',notes:'',photo:null},
+    {id:2,name:"Hendrick's Gin",loc:'Air Maroc',cat:'Gin',qty:2,fill:'3/4',notes:'',photo:null},
+    {id:3,name:'Campari',loc:'Air Maroc',cat:'Liqueur',qty:1,fill:'1/2',notes:'',photo:null},
+    {id:4,name:'Sweet Vermouth',loc:'Air Maroc',cat:'Vermouth',qty:1,fill:'full',notes:'',photo:null},
+    {id:5,name:"Tito's Vodka",loc:'Atlas Air',cat:'Vodka',qty:1,fill:'3/4',notes:'',photo:null},
+    {id:6,name:'Diplomatico Rum',loc:'Atlas Air',cat:'Rum',qty:1,fill:'full',notes:'',photo:null},
+    {id:7,name:'Espolòn Tequila',loc:'Atlas Air',cat:'Tequila',qty:0,fill:'low',notes:'Restock',photo:null},
+    {id:8,name:'Angostura Bitters',loc:'Atlas Air',cat:'Bitters',qty:1,fill:'1/2',notes:'',photo:null},
+    {id:9,name:'Simple Syrup',loc:'Ice Cart',cat:'Mixer',qty:2,fill:'full',notes:'Homemade',photo:null},
+    {id:10,name:'Tonic Water',loc:'Ice Cart',cat:'Mixer',qty:3,fill:'3/4',notes:'',photo:null},
+    {id:11,name:'Club Soda',loc:'Ice Cart',cat:'Mixer',qty:2,fill:'full',notes:'',photo:null},
+  ]
+};
+let nextId = Math.max(0, ...store.inventory.map(i => i.id)) + 1;
+let activeTab = 'All';
+let editingId = null;
+let fillEditId = null;
+let addPhotoData = null;
+let editPhotoData = null;
+let binId = localStorage.getItem('hb_bin_id') || '';
+let syncTimer = null;
+
+function saveLocal() {
+  try { localStorage.setItem('hb_v5', JSON.stringify(store)); } catch(e) {}
+}
+
+function saveAndSync() {
+  saveLocal();
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => pushToCloud(true), 1500);
+}
+
+function setSyncStatus(state, text) {
+  const dot = document.getElementById('sync-dot');
+  const status = document.getElementById('sync-status');
+  dot.className = 'sync-dot' + (state ? ' ' + state : '');
+  status.textContent = text;
+}
+
+async function pushToCloud(silent) {
+  if (!binId) {
+    if (!silent) showToast('No bin connected — open ☁ Sync to set up');
+    return;
+  }
+  setSyncStatus('busy', 'Syncing…');
+  try {
+    const res = await fetch(`${JSONBIN_BASE}/b/${binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+      body: JSON.stringify(store)
+    });
+    if (!res.ok) throw new Error(res.status);
+    setSyncStatus('ok', 'Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    if (!silent) showToast('Pushed to cloud ✓');
+  } catch(e) {
+    setSyncStatus('err', 'Sync failed');
+    if (!silent) showToast('Sync failed — check connection');
+  }
+}
+
+async function pullFromCloud() {
+  if (!binId) { showToast('No bin connected'); return; }
+  setSyncStatus('busy', 'Pulling…');
+  try {
+    const res = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
+    });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const pulled = data.record;
+    if (pulled && pulled.inventory && pulled.locations) {
+      store = pulled;
+      nextId = Math.max(0, ...store.inventory.map(i => i.id)) + 1;
+      saveLocal(); render();
+      setSyncStatus('ok', 'Pulled ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+      showToast('Pulled from cloud ✓');
+    } else {
+      throw new Error('bad data');
+    }
+  } catch(e) {
+    setSyncStatus('err', 'Pull failed');
+    showToast('Pull failed — check Bin ID');
+  }
+}
+
+async function createNewBin() {
+  setSyncStatus('busy', 'Creating bin…');
+  try {
+    const res = await fetch(`${JSONBIN_BASE}/b`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Name': 'home-bar', 'X-Bin-Private': 'true' },
+      body: JSON.stringify(store)
+    });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    binId = data.metadata.id;
+    localStorage.setItem('hb_bin_id', binId);
+    document.getElementById('bin-id-input').value = binId;
+    updateCloudStatus();
+    setSyncStatus('ok', 'Bin created');
+    showToast('New bin created — copy your Bin ID!');
+  } catch(e) {
+    setSyncStatus('err', 'Failed to create bin');
+    showToast('Could not create bin — check connection');
+  }
+}
+
+function connectBin() {
+  const val = document.getElementById('bin-id-input').value.trim();
+  if (!val) { showToast('Enter a Bin ID first'); return; }
+  binId = val;
+  localStorage.setItem('hb_bin_id', binId);
+  updateCloudStatus();
+  pullFromCloud();
+  showToast('Bin connected — pulling data…');
+}
+
+function updateCloudStatus() {
+  const dot = document.getElementById('cloud-dot');
+  const text = document.getElementById('cloud-status-text');
+  document.getElementById('bin-id-input').value = binId;
+  if (binId) {
+    dot.style.background = '#2E8B57';
+    text.textContent = 'Connected · ' + binId.slice(0, 8) + '…';
+  } else {
+    dot.style.background = 'var(--muted)';
+    text.textContent = 'No bin connected';
+  }
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(store, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'home-bar-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported — save to iCloud Files');
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if (parsed.inventory && parsed.locations) {
+        store = parsed;
+        nextId = Math.max(0, ...store.inventory.map(i => i.id)) + 1;
+        saveLocal(); render();
+        showToast('Imported successfully ✓');
+      } else {
+        showToast('Invalid backup file');
+      }
+    } catch(err) { showToast('Could not read file'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+}
+
+function openCloud() {
+  updateCloudStatus();
+  openModal('cloud-modal');
+}
+
+function render() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const inv = store.inventory;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${inv.length}</div><div class="stat-label">Bottles</div></div>
+    <div class="stat-card"><div class="stat-num">${inv.filter(i=>i.qty>0).length}</div><div class="stat-label">In stock</div></div>
+    <div class="stat-card"><div class="stat-num">${inv.filter(i=>i.qty===0).length}</div><div class="stat-label">Out</div></div>`;
+
+  document.getElementById('tabs').innerHTML = ['All',...store.locations].map(t => {
+    const count = t==='All' ? inv.length : inv.filter(i=>i.loc===t).length;
+    const col = t==='All' ? '' : locColor(t);
+    return `<button class="tab ${activeTab===t?'active':''}" onclick="setTab('${t}')">
+      ${t}<span class="tab-badge" style="background:${col?col+'18':'rgba(0,0,0,0.07)'};color:${col||'#7A746C'}">${count}</span>
+    </button>`;
+  }).join('');
+
+  let items = inv.filter(i => {
+    if (activeTab !== 'All' && i.loc !== activeTab) return false;
+    if (q && !i.name.toLowerCase().includes(q) && !i.cat.toLowerCase().includes(q) && !i.loc.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!items.length) { document.getElementById('inventory').innerHTML = '<div class="empty">No bottles found</div>'; return; }
+
+  let html = '';
+  if (activeTab === 'All') {
+    store.locations.forEach(loc => {
+      const li = items.filter(i => i.loc === loc);
+      if (!li.length) return;
+      const col = locColor(loc);
+      html += `<div class="sec-label" style="color:${col};border-left:3px solid ${col};padding-left:8px;border-radius:0">${loc}</div>`;
+      li.forEach(item => html += itemHtml(item, false));
+    });
+  } else {
+    [...new Set(items.map(i=>i.cat))].forEach(cat => {
+      html += `<div class="sec-label">${cat}</div>`;
+      items.filter(i=>i.cat===cat).forEach(item => html += itemHtml(item, true));
+    });
+  }
+  document.getElementById('inventory').innerHTML = html;
+}
+
+function itemHtml(item, showLoc) {
+  const thumb = item.photo
+    ? `<img src="${item.photo}" style="width:30px;height:42px;object-fit:cover;border-radius:4px;border:0.5px solid rgba(0,0,0,0.1)">`
+    : getLabel(item.cat, item.id);
+  return `<div class="item" onclick="openDetail(${item.id})">
+    <div class="lbl-icon">${thumb}</div>
+    <div class="item-info">
+      <div class="item-name">${item.name}${item.qty===0?'<span class="badge-out">out</span>':''}</div>
+      <div class="item-sub">
+        ${showLoc?`<span style="color:${locColor(item.loc)};font-weight:500">${item.loc}</span><span>·</span>`:''}
+        <span>${item.cat}</span>
+        ${item.qty>0?`<span>·</span>${fillPillHtml(item.fill,item.id)}`:''}
+      </div>
+    </div>
+    <div class="qty-ctrl" onclick="event.stopPropagation()">
+      <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+      <span class="qty-num">${item.qty}</span>
+      <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+    </div>
+  </div>`;
+}
+
+function setTab(t) { activeTab = t; render(); }
+function changeQty(id, d) {
+  const i = store.inventory.find(x=>x.id===id);
+  if (i) { i.qty = Math.max(0, i.qty+d); saveAndSync(); render(); }
+}
+
+function openDetail(id) {
+  const item = store.inventory.find(x=>x.id===id);
+  if (!item) return;
+  const f = FILLS[item.fill] || FILLS['full'];
+  const dots = Array.from({length:4}, (_,i) => `<span style="width:7px;height:7px;border-radius:50%;display:inline-block;background:${i<f.dots?f.color:'rgba(0,0,0,0.12)'}"></span>`).join('');
+  document.getElementById('detail-body').innerHTML = `
+    ${item.photo ? `<img src="${item.photo}" class="detail-photo">` : `<div class="detail-placeholder">No label photo — tap Edit to add one</div>`}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;gap:12px">
+      <div>
+        <div style="font-size:19px;font-weight:500;color:var(--text)">${item.name}</div>
+        <div style="font-size:13px;color:${locColor(item.loc)};font-weight:500;margin-top:3px">${item.loc}</div>
+      </div>
+      <button class="btn-amber" style="padding:7px 14px;font-size:13px;flex-shrink:0" onclick="closeModal('detail-modal');openEdit(${item.id})">Edit</button>
+    </div>
+    <div class="detail-row"><span class="dl">Category</span><span class="dv">${item.cat}</span></div>
+    <div class="detail-row"><span class="dl">Quantity</span><span class="dv">${item.qty} bottle${item.qty!==1?'s':''}</span></div>
+    <div class="detail-row"><span class="dl">Fill level</span><span class="dv"><span style="display:inline-flex;gap:2px">${dots}</span><span style="color:${f.color}">${f.label}</span></span></div>
+    ${item.notes?`<div class="detail-row"><span class="dl">Notes</span><span class="dv">${item.notes}</span></div>`:''}`;
+  openModal('detail-modal');
+}
+
+function openEdit(id) {
+  editingId = id;
+  const item = store.inventory.find(x=>x.id===id);
+  document.getElementById('e-name').value = item.name;
+  document.getElementById('e-qty').value = item.qty;
+  document.getElementById('e-notes').value = item.notes || '';
+  populateSelect('e-loc', item.loc);
+  document.getElementById('e-cat').value = item.cat;
+  document.querySelectorAll('#e-fill-picker .fill-opt').forEach(b => b.classList.toggle('selected', b.dataset.fill===item.fill));
+  editPhotoData = item.photo || null;
+  setPhotoPreview('e', editPhotoData);
+  openModal('edit-modal');
+}
+
+function saveEdit() {
+  const item = store.inventory.find(x=>x.id===editingId);
+  if (!item) return;
+  item.name = document.getElementById('e-name').value.trim() || item.name;
+  item.loc = document.getElementById('e-loc').value;
+  item.cat = document.getElementById('e-cat').value;
+  item.qty = parseInt(document.getElementById('e-qty').value) || 0;
+  item.notes = document.getElementById('e-notes').value.trim();
+  const sel = document.querySelector('#e-fill-picker .fill-opt.selected');
+  if (sel) item.fill = sel.dataset.fill;
+  item.photo = editPhotoData;
+  saveAndSync(); render(); closeModal('edit-modal');
+}
+
+function deleteBottle() {
+  if (!confirm('Remove this bottle?')) return;
+  store.inventory = store.inventory.filter(x=>x.id!==editingId);
+  saveAndSync(); render(); closeModal('edit-modal');
+}
+
+function openAdd() {
+  addPhotoData = null; setPhotoPreview('a', null);
+  document.getElementById('a-name').value = '';
+  document.getElementById('a-qty').value = 1;
+  document.getElementById('a-notes').value = '';
+  populateSelect('a-loc', activeTab!=='All' ? activeTab : store.locations[0]);
+  document.querySelectorAll('#a-fill-picker .fill-opt').forEach(b => b.classList.toggle('selected', b.dataset.fill==='full'));
+  openModal('add-modal');
+  setTimeout(() => document.getElementById('a-name').focus(), 80);
+}
+
+function addBottle() {
+  const name = document.getElementById('a-name').value.trim();
+  if (!name) { document.getElementById('a-name').focus(); return; }
+  const sel = document.querySelector('#a-fill-picker .fill-opt.selected');
+  store.inventory.push({ id:nextId++, name, loc:document.getElementById('a-loc').value, cat:document.getElementById('a-cat').value, qty:parseInt(document.getElementById('a-qty').value)||1, fill:sel?sel.dataset.fill:'full', notes:document.getElementById('a-notes').value.trim(), photo:addPhotoData });
+  saveAndSync(); render(); closeModal('add-modal');
+}
+
+function populateSelect(elId, selected) {
+  document.getElementById(elId).innerHTML = store.locations.map(l => `<option value="${l}"${l===selected?' selected':''}>${l}</option>`).join('');
+}
+
+function openManageLocations() {
+  renderLocChips(); document.getElementById('new-loc-input').value = ''; openModal('locs-modal');
+}
+function renderLocChips() {
+  document.getElementById('loc-chips').innerHTML = store.locations.map(loc => {
+    const col = locColor(loc);
+    const canDel = !BUILTIN_LOCS.includes(loc) && !store.inventory.some(i=>i.loc===loc);
+    return `<span class="loc-chip" style="background:${col}18;color:${col};border-color:${col}40">${loc}${canDel?`<span class="loc-chip-x" onclick="deleteLoc('${loc}')">×</span>`:''}</span>`;
+  }).join('');
+}
+function addLocation() {
+  const name = document.getElementById('new-loc-input').value.trim();
+  if (!name || store.locations.includes(name)) return;
+  store.locations.push(name); saveAndSync(); render(); renderLocChips();
+  document.getElementById('new-loc-input').value = '';
+}
+function deleteLoc(loc) {
+  if (store.inventory.some(i=>i.loc===loc)) { alert('Move or delete all bottles in this location first.'); return; }
+  store.locations = store.locations.filter(l=>l!==loc);
+  if (activeTab===loc) activeTab = 'All';
+  saveAndSync(); render(); renderLocChips();
+}
+
+function openFillOnly(id) {
+  fillEditId = id;
+  const item = store.inventory.find(x=>x.id===id);
+  document.getElementById('fill-modal-title').textContent = item.name;
+  document.querySelectorAll('#fill-picker-main .fill-opt').forEach(b => b.classList.toggle('selected', b.dataset.fill===item.fill));
+  openModal('fill-modal');
+}
+function saveFillOnly() {
+  const sel = document.querySelector('#fill-picker-main .fill-opt.selected');
+  if (sel && fillEditId) { const item=store.inventory.find(x=>x.id===fillEditId); if(item){item.fill=sel.dataset.fill;saveAndSync();render();} }
+  closeModal('fill-modal');
+}
+
+function pickFill(btn, pickerId) {
+  document.querySelectorAll('#'+pickerId+' .fill-opt').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function setPhotoPreview(prefix, data) {
+  const prev = document.getElementById(prefix+'-photo-preview');
+  const hint = document.getElementById(prefix+'-photo-hint');
+  if (data) { prev.innerHTML=`<img src="${data}" style="width:100%;max-height:160px;object-fit:contain;border-radius:6px">`; hint.textContent='Tap to change'; }
+  else { prev.innerHTML=''; hint.textContent='Tap to add a photo'; }
+}
+function aPhotoTap() { document.getElementById('a-file-input').click(); }
+function aPhotoCamera() { event.stopPropagation(); document.getElementById('a-camera-input').click(); }
+function aPhotoFile() { event.stopPropagation(); document.getElementById('a-file-input').click(); }
+function aClearPhoto() { addPhotoData=null; setPhotoPreview('a',null); }
+function aHandleFile(e) { const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{addPhotoData=ev.target.result;setPhotoPreview('a',addPhotoData);};r.readAsDataURL(f); }
+function ePhotoTap() { document.getElementById('e-file-input').click(); }
+function ePhotoCamera() { event.stopPropagation(); document.getElementById('e-camera-input').click(); }
+function ePhotoFile() { event.stopPropagation(); document.getElementById('e-file-input').click(); }
+function eClearPhoto() { editPhotoData=null; setPhotoPreview('e',null); }
+function eHandleFile(e) { const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{editPhotoData=ev.target.result;setPhotoPreview('e',editPhotoData);};r.readAsDataURL(f); }
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function bgClick(e, id) { if(e.target===document.getElementById(id)) closeModal(id); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+async function openCocktails() {
+  const inStock = store.inventory.filter(i=>i.qty>0).map(i=>i.name);
+  if (inStock.length < 2) { alert('Add at least 2 bottles to get cocktail suggestions.'); return; }
+  document.getElementById('cocktail-result').innerHTML = '<div class="dot-pulse"><span></span><span></span><span></span></div>';
+  openModal('cocktail-modal');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:`My home bar has: ${inStock.join(', ')}.\n\nSuggest 5 cocktails I can make. For each give the name, key ingredients, and a 1-sentence method. Format each with the cocktail name on its own line.`}] })
+    });
+    const data = await res.json();
+    document.getElementById('cocktail-result').textContent = data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || 'No suggestions returned.';
+  } catch(e) { document.getElementById('cocktail-result').textContent = 'Could not reach the AI service. Check your connection.'; }
+}
+
+if (binId) {
+  setSyncStatus('busy', 'Syncing…');
+  pullFromCloud().then(() => render());
+} else {
+  setSyncStatus('', 'No cloud sync yet — tap ☁ Sync');
+  render();
+}
+</script>
+</body>
+</html>
